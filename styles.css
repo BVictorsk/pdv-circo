@@ -16,6 +16,21 @@
     --blue-credit: #3b82f6; /* NOVO: Azul claro para Crédito */
 }
 
+.light-theme {
+    --bg-dark: #f4f4f5;
+    --card-dark: #ffffff;
+    --purple-main: #6b46c1;
+    --purple-hover: #5a3c9e;
+    --text-light: #18181b;
+    --text-muted: #71717a;
+    --input-bg: #e4e4e7;
+    --red-error: #dc2626;
+    --green-success: #16a34a;
+    --yellow-warning: #f59e0b;
+    --blue-pix: #2563eb;
+    --blue-credit: #3b82f6;
+}
+
 * {
     box-sizing: border-box;
     margin: 0;

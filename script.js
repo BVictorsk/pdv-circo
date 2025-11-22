@@ -24,14 +24,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Lógica da Tela de PDV (pdv.html) ---
     
     const produtos = [
-        { id: 'H01', nome: 'Hot Dog', preco: 15.00, icone: '&#x1F32D;', rapido: true },
-        { id: 'P01', nome: 'Pipoca Doce', preco: 12.00, icone: '&#x1F37F;', rapido: true },
-        { id: 'A01', nome: 'Água', preco: 5.00, icone: '&#x1F4A7;', rapido: true },
-        { id: 'R01', nome: 'Refrigerante', preco: 8.00, icone: '&#x1F964;', rapido: true },
-        { id: 'P02', nome: 'Pipoca Salgada', preco: 10.00, icone: '&#x1F37F;', rapido: false },
-        { id: 'C01', nome: 'Algodão Doce', preco: 7.00, icone: '&#x1F36C;', rapido: false },
-        { id: 'B01', nome: 'Brinquedo (Lojinha)', preco: 45.00, icone: '&#x1F388;', rapido: false },
-        { id: 'F01', nome: 'Foto Porta-Retrato', preco: 60.00, icone: '&#x1F5BC;', rapido: false },
+        { id: 'H01', nome: 'Hot Dog', preco: 15.00, icone: '🌭', rapido: true },
+        { id: 'P01', nome: 'Pipoca Doce', preco: 12.00, icone: '🍿', rapido: true },
+        { id: 'A01', nome: 'Água', preco: 5.00, icone: '💧', rapido: true },
+        { id: 'R01', nome: 'Refrigerante', preco: 8.00, icone: '🥤', rapido: true },
+        { id: 'P02', nome: 'Pipoca Salgada', preco: 10.00, icone: '🍿', rapido: false },
+        { id: 'C01', nome: 'Algodão Doce', preco: 7.00, icone: '🍭', rapido: false },
+        { id: 'B01', nome: 'Brinquedo (Lojinha)', preco: 45.00, icone: '🎈', rapido: false },
+        { id: 'F01', nome: 'Foto Porta-Retrato', preco: 60.00, icone: '🖼️', rapido: false },
     ];
 
     const SENHA_SUPERVISOR = '5678'; 
@@ -48,6 +48,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const userDisplay = document.getElementById('user-display');
     const carrinhoResumoDiv = document.querySelector('.pdv-carrinho .carrinho-resumo');
     const brindeContainer = document.getElementById('brinde-container'); // NOVO: Container do brinde
+    const themeSwitcher = document.getElementById('btn-theme-switcher');
+    const body = document.body;
+
+    if(themeSwitcher) {
+        themeSwitcher.addEventListener('click', () => {
+            body.classList.toggle('light-theme');
+            const isLightTheme = body.classList.contains('light-theme');
+            themeSwitcher.textContent = isLightTheme ? 'Mudar para Tema Escuro' : 'Mudar para Tema Claro';
+        });
+    }
 
     // --- FUNÇÕES DE LÓGICA CENTRAL ---
     
@@ -81,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="opcoes-pagamento" id="opcoes-pagamento">
                     </div>
                 <button class="btn-pagamento btn-cancelar" id="btn-cancelar">
-                    &#x274C; Cancelar Pedido
+                    ❌ Cancelar Pedido
                 </button>
             `;
 
@@ -138,7 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (carrinho.length > 0) {
                  // Se o pagamento já foi completado, só exibe a lista de pagamentos e o botão de cancelar/finalizar
                 carrinhoResumoDiv.insertAdjacentHTML('beforeend', pagamentosListaHTML);
-                carrinhoResumoDiv.insertAdjacentHTML('beforeend', `<button class="btn-pagamento btn-cancelar" id="btn-cancelar" style="grid-column: span 2;">&#x274C; Cancelar Pedido</button>`);
+                carrinhoResumoDiv.insertAdjacentHTML('beforeend', `<button class="btn-pagamento btn-cancelar" id="btn-cancelar" style="grid-column: span 2;">❌ Cancelar Pedido</button>`);
             }
             
             
@@ -224,7 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const renderizarBotaoBrinde = () => {
              brindeContainer.innerHTML = `
                 <button class="btn-brinde" id="btn-dar-brinde">
-                    &#x1F381; Dar Brinde (Cortesia)
+                    🎁 Dar Brinde (Cortesia)
                 </button>
             `;
             document.getElementById('btn-dar-brinde').addEventListener('click', mostrarInputBrinde);
@@ -244,7 +254,7 @@ document.addEventListener('DOMContentLoaded', () => {
                            placeholder="Senha Supervisor" 
                            style="flex-grow: 1; padding: 8px; font-size: 14px; border: none;">
                     <button id="btn-confirmar-brinde" class="btn-primary" style="padding: 8px 12px;">
-                        &#x1F513; OK
+                        🔑 OK
                     </button>
                     <button id="btn-cancelar-brinde" class="btn-controle btn-cancelar-item" style="padding: 4px; width: 20px; height: 20px; font-size: 14px;">
                         &times;
@@ -370,10 +380,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 'dinheiro': 'btn-dinheiro'
             };
             const icones = {
-                'pix': '&#x1F4F6; PIX (QR Code)',
-                'debito': '&#x1F4B3; Débito',
-                'credito': '&#x1F4B3; Crédito',
-                'dinheiro': '&#x1F4B5; Dinheiro'
+                'pix': '💳 PIX (QR Code)',
+                'debito': '💳 Débito',
+                'credito': '💳 Crédito',
+                'dinheiro': '💵 Dinheiro'
             };
             
             return `
