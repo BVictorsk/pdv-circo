@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Circus Max PDV - Venda Rápida</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="pdv-header">
+        <div class="pdv-header-left">
+            Circus Max PDV
+        </div>
+        <div class="pdv-header-right">
+            <span style="color: var(--text-muted); font-size: 14px;">Logado como: <strong id="user-display">demo</strong></span>
+            <a href="#">Dashboard</a>
+            <a href="#">Fechamento</a>
+            <button class="btn-header btn-venda-rapida">Venda Rápida</button>
+            <button class="btn-header btn-fechar" onclick="location.href='index.html'">
+                &#x274C; Sair
+            </button>
+        </div>
+    </header>
+
+    <main class="pdv-main">
+        <section class="pdv-produtos">
+            <div class="acoes-superiores">
+                <div style="display: flex; gap: 15px;">
+                    <div id="brinde-container">
+                        <button class="btn-brinde" id="btn-dar-brinde">
+                            &#x1F381; Dar Brinde (Cortesia)
+                        </button>
+                    </div>
+                    </div>
+                <input type="text" class="busca-input" placeholder="Buscar por nome ou código (Ex: H01)">
+            </div>
+            
+            <div class="produtos-secao">
+                <h3>&#x26A1; Acesso Rápido</h3>
+                <div class="produtos-grid" id="acesso-rapido-grid">
+                    </div>
+            </div>
+
+            <div class="produtos-secao">
+                <h3>&#x1F388; Outros Produtos</h3>
+                <div class="produtos-grid" id="outros-produtos-grid">
+                    </div>
+            </div>
+
+        </section>
+
+        <section class="pdv-carrinho">
+            <h2 class="carrinho-titulo">Pedido Atual</h2>
+            
+            <div class="carrinho-conteudo" id="carrinho-lista">
+                </div>
+            
+            <div class="carrinho-resumo">
+                <div class="carrinho-total">
+                    <span>TOTAL:</span>
+                    <span class="valor" id="total-valor">R$ 0,00</span>
+                </div>
+                
+                <p class="carrinho-pagamento">Pagamento:</p>
+                <div class="opcoes-pagamento">
+                    <button class="btn-pagamento btn-pix" data-tipo="pix">
+                        &#x1F4F6; PIX
+                    </button>
+                    <button class="btn-pagamento btn-credito" data-tipo="credito">
+                        &#x1F4B3; Crédito
+                    </button>
+                    <button class="btn-pagamento btn-debito" data-tipo="debito">
+                        &#x1F4B3; Débito
+                    </button>                    
+                    <button class="btn-pagamento btn-dinheiro" data-tipo="dinheiro">
+                        &#x1F4B5; Dinheiro
+                    </button>
+                    <button class="btn-pagamento btn-cancelar" id="btn-cancelar">
+                        &#x274C; Cancelar Pedido
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>

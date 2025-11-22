@@ -1,0 +1,778 @@
+/* Importar uma fonte limpa como 'Inter' do Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+:root {
+    --bg-dark: #1f2129; /* Fundo principal */
+    --card-dark: #2a2c34; /* Fundo do card/container */
+    --purple-main: #6b46c1; /* Roxo principal para botões/destaques */
+    --purple-hover: #5a3c9e;
+    --text-light: #e4e4e7; /* Cor do texto claro */
+    --text-muted: #a1a1aa; /* Cor do texto secundário */
+    --input-bg: #404452; /* Fundo dos inputs */
+    --red-error: #ef4444; /* Vermelho de erro/cancelar */
+    --green-success: #10b981; /* Verde (usado para Débito) */
+    --yellow-warning: #f59e0b; /* Amarelo/Laranja */
+    --blue-pix: #0d80e7; /* Azul claro para PIX/QR */
+    --blue-credit: #3b82f6; /* NOVO: Azul claro para Crédito */
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', sans-serif;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-light);
+    min-height: 100vh;
+}
+
+/* --- Componentes Comuns (Login) --- */
+
+.container {
+    background-color: var(--card-dark);
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+}
+
+.input-group {
+    margin-bottom: 20px;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.input-field {
+    width: 100%;
+    padding: 12px 15px;
+    background-color: var(--input-bg);
+    border: 1px solid transparent;
+    border-radius: 8px;
+    color: var(--text-light);
+    font-size: 16px;
+    transition: border-color 0.3s;
+    background-repeat: no-repeat;
+    background-position: 15px center;
+    padding-left: 45px;
+}
+
+.input-field:focus {
+    border-color: var(--purple-main);
+    outline: none;
+}
+
+.icon-user {
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23a1a1aa'%3E%3Cpath d='M12 2a5 5 0 0 0-5 5c0 1.95.84 3.71 2.18 4.96A9.008 9.008 0 0 0 3 21h18a9.008 9.008 0 0 0-6.18-8.04A5.002 5.002 0 0 0 12 2zm0 9a4 4 0 1 1 0-8 4 4 0 0 1 0 8z'/%3E%3C/svg%3E");
+    background-size: 20px;
+}
+
+.icon-lock {
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23a1a1aa'%3E%3Cpath d='M12 17a1 1 0 0 1 1 1v2a1 1 0 0 1-2 0v-2a1 1 0 0 1 1-1zM6 10a6 6 0 0 1 12 0v2h-2V10a4 4 0 0 0-8 0v2H6v-2zm12 2h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1h2v2h12v-2z'/%3E%3C/svg%3E");
+    background-size: 20px;
+}
+
+.btn-primary {
+    width: 100%;
+    padding: 15px 20px;
+    background-color: var(--purple-main);
+    color: var(--text-light);
+    border: none;
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+.btn-primary:hover {
+    background-color: var(--purple-hover);
+}
+
+.btn-primary:active {
+    transform: scale(0.99);
+}
+
+.login-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.login-card {
+    width: 400px;
+    text-align: center;
+}
+
+.login-card h2 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.login-card p {
+    color: var(--text-muted);
+    margin-bottom: 30px;
+}
+
+.login-card .logo {
+    display: inline-block;
+    color: var(--purple-main);
+    font-size: 40px;
+    margin-bottom: 10px;
+}
+
+/* --- Estilo Específico do PDV (Venda Rápida) --- */
+.pdv-header {
+    background-color: var(--card-dark);
+    padding: 15px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid var(--input-bg);
+}
+
+.pdv-header-left {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--purple-main);
+}
+
+.pdv-header-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.pdv-header-right a {
+    color: var(--text-light);
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.btn-header {
+    padding: 8px 15px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.btn-venda-rapida {
+    background-color: var(--purple-main);
+    color: var(--text-light);
+}
+
+.btn-fechar {
+    background-color: var(--red-error);
+    color: var(--text-light);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.pdv-main {
+    display: flex;
+    padding: 20px;
+    gap: 20px;
+    height: calc(100vh - 70px);
+}
+
+.pdv-produtos {
+    flex: 2;
+    overflow-y: auto;
+}
+
+.pdv-carrinho {
+    flex: 1;
+    background-color: var(--card-dark);
+    border-radius: 12px;
+    padding: 20px;
+    min-width: 350px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Ações/Busca/Brinde */
+.acoes-superiores {
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.btn-brinde, .btn-leitor {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 16px;
+}
+
+.btn-brinde {
+    background-color: var(--purple-main);
+    color: var(--text-light);
+}
+
+.btn-leitor {
+    background-color: var(--green-success);
+    color: var(--text-light);
+}
+
+.busca-input {
+    width: 100%;
+    padding: 12px 15px;
+    background-color: var(--input-bg);
+    border: none;
+    border-radius: 8px;
+    color: var(--text-light);
+    font-size: 16px;
+    padding-left: 45px;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23a1a1aa'%3E%3Cpath d='M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 17 9.5a6.5 6.5 0 1 0-6.5 6.5c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z'/%3E%3C/svg%3E");
+    background-size: 20px;
+    background-repeat: no-repeat;
+    background-position: 15px center;
+}
+
+/* Seções de Produtos */
+.produtos-secao {
+    margin-bottom: 30px;
+}
+
+.produtos-secao h3 {
+    color: var(--text-light);
+    font-size: 18px;
+    margin-bottom: 15px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid var(--input-bg);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.produtos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 15px;
+}
+
+.produto-card {
+    background-color: var(--input-bg);
+    border-radius: 8px;
+    padding: 15px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    height: 120px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.produto-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.produto-card .icone {
+    font-size: 24px;
+    margin-bottom: 5px;
+    color: var(--purple-main);
+}
+
+.produto-card .nome {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.produto-card .preco {
+    color: var(--green-success);
+    font-weight: 700;
+    font-size: 16px;
+    margin-top: 5px;
+}
+
+/* Carrinho (Pedido Atual) */
+.carrinho-titulo {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-light);
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--input-bg);
+}
+
+.carrinho-conteudo {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding-right: 5px;
+    color: var(--text-muted);
+    text-align: center;
+    display: block; 
+}
+
+.carrinho-item {
+    background-color: var(--input-bg);
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+.item-header {
+    font-weight: 600;
+    color: var(--text-light);
+    margin-bottom: 5px;
+    font-size: 15px;
+}
+
+.item-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Botões do Carrinho */
+.item-acoes-esquerda {
+    display: flex;
+    align-items: center;
+    gap: 10px; 
+}
+
+.item-preco-qtde {
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+.btn-cancelar-item {
+    background: var(--red-error);
+    border-radius: 4px; 
+    width: 25px;
+    height: 25px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-light);
+    line-height: 1;
+    cursor: pointer;
+    border: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.item-controles-direita {
+    display: flex;
+    gap: 5px;
+    align-items: center; 
+}
+
+.quantidade-display {
+    color: var(--text-light);
+    font-weight: 600;
+    width: 20px; 
+    text-align: center;
+}
+
+.btn-controle {
+    border: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s;
+    line-height: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.btn-controle[data-acao="aumentar"] {
+    background: var(--purple-main);
+    color: var(--text-light);
+}
+
+.btn-controle[data-acao="diminuir"] {
+    background: var(--yellow-warning); 
+    color: var(--bg-dark); 
+}
+
+.btn-controle:hover {
+    opacity: 0.9;
+}
+
+
+/* --- Resumo e Pagamento --- */
+
+.carrinho-resumo {
+    padding-top: 20px;
+    border-top: 1px solid var(--input-bg);
+}
+
+.carrinho-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 20px;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-light);
+}
+
+.carrinho-total span:first-child {
+    font-size: 16px;
+    color: var(--text-muted);
+}
+
+.carrinho-total .valor {
+    font-size: 30px;
+}
+
+.carrinho-pagamento {
+    margin-bottom: 15px;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+/* Container dos botões de pagamento e input */
+.opcoes-pagamento {
+    /* Ajustado para 2 colunas para caber 4 botões na tela grande */
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 10px; 
+}
+
+.btn-pagamento {
+    padding: 15px 10px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 14px;
+    height: 60px; 
+    box-sizing: border-box;
+    transition: all 0.2s;
+}
+
+.btn-pix {
+    background-color: var(--blue-pix);
+    color: var(--text-light);
+}
+
+/* NOVO: Débito (usando a cor verde original) */
+.btn-debito {
+    background-color: var(--green-success);
+    color: var(--text-light);
+}
+
+/* NOVO: Crédito */
+.btn-credito {
+    background-color: var(--blue-credit);
+    color: var(--text-light);
+}
+
+.btn-dinheiro {
+    background-color: var(--yellow-warning);
+    color: var(--bg-dark); 
+}
+
+.btn-cancelar {
+    grid-column: span 2;
+    background-color: var(--red-error);
+    color: var(--text-light);
+    height: 50px;
+}
+
+/* NOVO: Lista de pagamentos efetuados */
+.pagamentos-lista {
+    list-style: none;
+    padding: 0;
+    margin-bottom: 15px;
+    border: 1px dashed var(--input-bg);
+    border-radius: 6px;
+    padding: 10px;
+}
+
+.pagamento-item {
+    font-size: 14px;
+    color: var(--text-light);
+    font-weight: 600;
+    margin-bottom: 5px;
+    padding-left: 5px;
+    border-left: 3px solid var(--purple-main);
+    display: flex;
+    justify-content: space-between;
+}
+.pagamento-item:last-child {
+    margin-bottom: 0;
+}
+
+/* --- ESTILO PARA INPUT DE PAGAMENTO --- */
+
+.input-pagamento-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 5px;
+    background-color: var(--input-bg);
+    border-radius: 8px;
+    height: 60px; 
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.input-pagamento-valor {
+    width: 100%;
+    padding: 5px;
+    background-color: var(--card-dark);
+    border: 1px solid var(--purple-main);
+    border-radius: 4px;
+    color: var(--text-light);
+    font-size: 14px;
+    text-align: right;
+    height: 25px; 
+    box-sizing: border-box;
+    
+    /* CORREÇÃO/ADICIONADO PARA COMPATIBILIDADE: */
+    -moz-appearance: textfield; /* Para Firefox */
+    -webkit-appearance: none; /* Para Chrome/Safari/Edge */
+    appearance: none; /* Padrão */
+}
+
+/* Esconde setas do input number */
+.input-pagamento-valor::-webkit-outer-spin-button,
+.input-pagamento-valor::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+
+.btn-confirmar-pagamento {
+    width: 100%;
+    padding: 2px 5px;
+    border: none;
+    border-radius: 4px;
+    background-color: var(--purple-main);
+    color: var(--text-light);
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 10px; 
+    height: 18px; 
+    transition: background-color 0.2s;
+}
+
+.btn-finalizar {
+    margin-top: 15px;
+    background-color: var(--green-success);
+}
+.btn-finalizar:hover {
+    background-color: #0b9e69;
+}
+
+
+/* --- Estilos para o Modal de Senha (Brinde) --- */
+
+.modal {
+    display: none; /* Escondido por padrão */
+    position: fixed; 
+    z-index: 100; /* Acima de tudo */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.7); /* Fundo escuro semi-transparente */
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background-color: var(--card-dark);
+    margin: 15% auto; /* Centraliza verticalmente */
+    padding: 30px;
+    border-radius: 12px;
+    width: 90%; 
+    max-width: 400px; /* Largura máxima */
+    position: relative;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+    animation-name: animatetop;
+    animation-duration: 0.4s;
+}
+
+@keyframes animatetop {
+    from {top: -300px; opacity: 0}
+    to {top: 0; opacity: 1}
+}
+
+.close-button {
+    color: var(--text-muted);
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: var(--red-error);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.modal-title {
+    color: var(--purple-main);
+    margin-bottom: 10px;
+}
+
+.modal-message {
+    color: var(--text-muted);
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+.feedback-message {
+    text-align: center;
+    margin-top: 15px;
+    font-weight: 600;
+}
+
+/* Estilo para a mensagem de erro/sucesso do modal */
+.feedback-message.error {
+    color: var(--red-error);
+}
+
+.feedback-message.success {
+    color: var(--green-success);
+}
+
+/* --- RESPONSIVIDADE (MEDIA QUERIES) --- */
+
+@media (max-width: 800px) {
+    .pdv-main {
+        flex-direction: column; 
+        padding: 15px;
+        gap: 15px;
+        height: auto; 
+    }
+
+    .pdv-carrinho {
+        min-width: 100%; 
+        order: -1; 
+        max-height: 550px; 
+    }
+    
+    .carrinho-conteudo {
+        max-height: 280px; 
+    }
+
+    .pdv-produtos {
+        flex: 1;
+        overflow-y: visible;
+    }
+
+    .produtos-grid {
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); 
+    }
+}
+
+
+@media (max-width: 600px) {
+    /* Login Page */
+    .login-card {
+        width: 90%;
+        padding: 20px;
+    }
+
+    /* PDV Header */
+    .pdv-header {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 10px 15px;
+    }
+
+    .pdv-header-left {
+        margin-bottom: 10px;
+    }
+
+    .pdv-header-right {
+        width: 100%;
+        justify-content: space-between;
+        flex-wrap: wrap; 
+        gap: 8px;
+    }
+    
+    .pdv-header-right a, .pdv-header-right .btn-header {
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+
+    /* PDV Main Content */
+    .pdv-main {
+        padding: 10px;
+        gap: 10px;
+    }
+    
+    /* Ações Superiores */
+    .acoes-superiores > div {
+        flex-direction: column; 
+        gap: 10px;
+    }
+    
+    /* Produtos Grid */
+    .produtos-grid {
+        grid-template-columns: repeat(2, 1fr); 
+    }
+
+    .produto-card {
+        height: 100px;
+        padding: 10px;
+    }
+    
+    .produto-card .nome {
+        font-size: 12px;
+    }
+    
+    .produto-card .preco {
+        font-size: 14px;
+    }
+
+    /* Carrinho */
+    .pdv-carrinho {
+        max-height: 500px;
+    }
+    
+    .carrinho-conteudo {
+        max-height: 250px;
+    }
+    
+    .carrinho-total .valor {
+        font-size: 24px;
+    }
+
+    /* Em telas muito pequenas, 4 botões em 2 colunas podem ficar muito apertados. Voltamos para 1 coluna ou adaptamos. */
+    .opcoes-pagamento {
+        grid-template-columns: 1fr 1fr; 
+    }
+
+    .btn-cancelar {
+        grid-column: span 2; 
+    }
+}

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acesso ao Circus Max PDV</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="login-page">
+    <div class="container login-card">
+        <div class="logo">
+            &#x26F9;
+        </div>
+        <h2>Acesso ao Circus Max PDV</h2>
+        <p>Insira suas credenciais e o troco inicial.</p>
+
+        <form id="login-form">
+            <div class="input-group">
+                <label for="usuario">Usuário</label>
+                <input type="text" id="usuario" name="usuario" class="input-field icon-user" value="demo" required>
+            </div>
+            
+            <div class="input-group">
+                <label for="senha">Senha</label>
+                <input type="password" id="senha" name="senha" class="input-field icon-lock" value="1234" required>
+            </div>
+
+            <div class="input-group">
+                <label for="troco">Troco Inicial (R$)</label>
+                <input type="text" id="troco" name="troco" class="input-field" placeholder="Ex: 100,00" value="100.00" required>
+            </div>
+
+            <button type="submit" class="btn-primary">
+                Abrir Caixa e Entrar
+            </button>
+        </form>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
