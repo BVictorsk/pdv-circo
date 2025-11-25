@@ -1,3 +1,4 @@
+
 // --- Lógica Completa e Corrigida (script.js) ---
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -47,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const carrinhoLista = document.getElementById('carrinho-lista');
     const userDisplay = document.getElementById('user-display');
     const carrinhoResumoDiv = document.querySelector('.pdv-carrinho .carrinho-resumo');
-    const brindeContainer = document.getElementById('brinde-container'); // NOVO: Container do brinde
+    const brindeContainer = document.getElementById('brinde-container');
     const themeSwitcher = document.getElementById('btn-theme-switcher');
     const body = document.body;
 
@@ -68,24 +69,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const formatarPreco = (valor) => `R$ ${valor.toFixed(2).replace('.', ',')}`;
 
-        // Função principal de cálculo e atualização do resumo (TOTAL/FALTA/TROCO)
         const calcularTotalEAtualizarResumo = () => {
             valorTotal = carrinho.reduce((acc, item) => acc + (item.preco * item.quantidade), 0);
             valorRestante = valorTotal - valorPago;
 
             let resumoHTML = '';
             
-            // 1. Pagamentos já efetuados (Lista)
             let pagamentosListaHTML = pagamentosEfetuados.length > 0 ? 
                 '<ul class="pagamentos-lista">' + pagamentosEfetuados.map(p => 
                     `<li class="pagamento-item">${p.tipo.toUpperCase()}: ${formatarPreco(p.valor)}</li>`
                 ).join('') + '</ul>' 
                 : '';
 
-            // 2. Cabeçalho de Pagamento
             const pagamentoHeader = carrinho.length > 0 ? '<p class="carrinho-pagamento">Pagamento:</p>' : '';
             
-            // 3. Estrutura de Botões (vazia, será preenchida por renderizarOpcoesPagamento)
             const opcoesPagamentoEBotaoCancelar = `
                 ${pagamentosListaHTML}
                 <div class="opcoes-pagamento" id="opcoes-pagamento">
@@ -98,9 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const resultadoContainer = carrinhoResumoDiv.querySelector('.resultado-container') || document.createElement('div');
             resultadoContainer.classList.add('resultado-container');
 
-            // --- Lógica de Estado (TOTAL, FALTA, TROCO, FINALIZAR) ---
             if (valorRestante > 0 && carrinho.length > 0) {
-                // Pagamento Parcial (FALTA) 
                 resumoHTML = `
                     <div class="carrinho-total" style="color: var(--yellow-warning);">
                         <span>FALTA:</span>
@@ -108,7 +103,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 `;
             } else if (carrinho.length > 0) {
-                // Pagamento Completo (Troco ou Exato) - Aparece FINALIZAR
                 trocoNecessario = Math.max(0, valorPago - valorTotal);
                 const cor = trocoNecessario > 0 ? 'var(--green-success)' : 'var(--text-light)';
                 const label = trocoNecessario > 0 ? 'TROCO' : 'TOTAL';
@@ -125,7 +119,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     </button>
                 `;
             } else {
-                 // Carrinho Vazio
                 trocoNecessario = 0;
                 resumoHTML = `
                     <div class="carrinho-total">
@@ -137,27 +130,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
             resultadoContainer.innerHTML = resumoHTML;
 
-            // Limpa e reconstrói o conteúdo do resumo para manter a ordem
             carrinhoResumoDiv.innerHTML = '';
             carrinhoResumoDiv.appendChild(resultadoContainer);
             carrinhoResumoDiv.insertAdjacentHTML('beforeend', pagamentoHeader);
             
-            // Só exibe as opções de pagamento se ainda houver valor restante (ou se o carrinho não for vazio e não tiver pago nada)
             if (valorRestante > 0 || valorPago === 0 && carrinho.length > 0) {
                 carrinhoResumoDiv.insertAdjacentHTML('beforeend', opcoesPagamentoEBotaoCancelar);
             } else if (carrinho.length > 0) {
-                 // Se o pagamento já foi completado, só exibe a lista de pagamentos e o botão de cancelar/finalizar
                 carrinhoResumoDiv.insertAdjacentHTML('beforeend', pagamentosListaHTML);
                 carrinhoResumoDiv.insertAdjacentHTML('beforeend', `<button class="btn-pagamento btn-cancelar" id="btn-cancelar" style="grid-column: span 2;">❌ Cancelar Pedido</button>`);
             }
             
-            
-            // Se ainda falta pagar, renderiza os botões de pagamento e associa os listeners
             if (valorRestante > 0 || valorPago === 0 && carrinho.length > 0) {
                 renderizarOpcoesPagamento();
             }
 
-            // Reassocia todos os listeners
             reassociarListenersGerais();
         };
 
@@ -171,52 +158,131 @@ document.addEventListener('DOMContentLoaded', () => {
                 btnFinalizar.addEventListener('click', () => finalizarVenda('PAGO'));
             }
 
-            // Reassocia o listener do botão Brinde original (se estiver visível)
             const btnBrinde = document.getElementById('btn-dar-brinde');
             if (btnBrinde) {
                  btnBrinde.addEventListener('click', mostrarInputBrinde);
             }
         }
 
-        // 5. Função de Finalização de Venda
-        const finalizarVenda = (tipoFinalizacao = 'PAGO') => {
+        const imprimirRecibo = () => {
+            const data = new Date();
+            const dataFormatada = `${data.toLocaleDateString('pt-BR')} ${data.toLocaleTimeString('pt-BR')}`;
+            
+            let itensRecibo = carrinho.map(item => `
+                <tr>
+                    <td>${item.quantidade}x ${item.nome}</td>
+                    <td>${formatarPreco(item.preco * item.quantidade)}</td>
+                </tr>
+            `).join('');
+
+            let pagamentosRecibo = pagamentosEfetuados.map(p => `
+                <p><strong>${p.tipo.toUpperCase()}:</strong> ${formatarPreco(p.valor)}</p>
+            `).join('');
+
+            const conteudoRecibo = `
+                <html>
+                <head>
+                    <title>Recibo</title>
+                    <style>
+                        body { font-family: 'Courier New', monospace; font-size: 10px; color: #000; }
+                        .recibo-container { width: 280px; margin: 0 auto; }
+                        h2 { text-align: center; margin-bottom: 10px; font-size: 14px; }
+                        p { margin: 2px 0; }
+                        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+                        th, td { text-align: left; padding: 2px; }
+                        .total { font-weight: bold; font-size: 12px; }
+                        hr { border: none; border-top: 1px dashed #000; margin: 5px 0; }
+                    </style>
+                </head>
+                <body>
+                    <div class="recibo-container">
+                        <h2>Circus Max PDV</h2>
+                        <p>Data: ${dataFormatada}</p>
+                        <p>Operador: ${sessionStorage.getItem('loggedInUser') || 'N/A'}</p>
+                        <hr>
+                        <table>
+                            ${itensRecibo}
+                        </table>
+                        <hr>
+                        <p class="total">TOTAL: ${formatarPreco(valorTotal)}</p>
+                        ${pagamentosRecibo}
+                        ${trocoNecessario > 0 ? `<p class="total">TROCO: ${formatarPreco(trocoNecessario)}</p>` : ''}
+                        <hr>
+                        <p style="text-align: center;">Obrigado e volte sempre!</p>
+                    </div>
+                </body>
+                </html>
+            `;
+            
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(conteudoRecibo);
+            printWindow.document.close();
+            printWindow.focus();
+            printWindow.print();
+            printWindow.close();
+        };
+
+        const finalizarVenda = async (tipoFinalizacao = 'PAGO') => {
             if (carrinho.length === 0) {
                  alert('Adicione itens ao carrinho para finalizar a venda.');
                  return;
             }
 
             if (tipoFinalizacao === 'PAGO' && valorRestante > 0) {
-                alert('Ainda faltam R$ ' + valorRestante.toFixed(2).replace('.', ',') + ' para completar o pagamento.');
+                alert('Ainda faltam ' + formatarPreco(valorRestante) + ' para completar o pagamento.');
                 return;
             }
 
-            let troco = trocoNecessario > 0 ? formatarPreco(trocoNecessario) : 'Nenhum';
-            let mensagemTipo = tipoFinalizacao === 'BRINDE' ? 'BRINDE/CORTESIA' : 'PAGO';
-            
-            alert(`
-                Venda Finalizada como ${mensagemTipo}!
-                ------------------------------
-                Total da Compra: ${formatarPreco(valorTotal)}
-                Valor Registrado: ${formatarPreco(valorPago)}
-                ${tipoFinalizacao === 'PAGO' ? 'Troco a ser dado: ' + troco : ''}
-            `);
+            // --- LÓGICA FIREBASE PRIMEIRO ---
+            try {
+                // 1. Salva a venda no Firestore
+                await db.collection("vendas").add({
+                    itens: carrinho,
+                    valorTotal: valorTotal,
+                    valorPago: valorPago,
+                    troco: trocoNecessario,
+                    pagamentos: pagamentosEfetuados,
+                    tipo: tipoFinalizacao,
+                    operador: sessionStorage.getItem('loggedInUser') || 'N/A',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                console.log("Venda salva com sucesso no Firestore!");
 
-            // Reseta o estado da venda
-            carrinho = [];
-            valorPago = 0;
-            valorTotal = 0;
-            trocoNecessario = 0;
-            pagamentosEfetuados = []; 
-            renderizarCarrinho();
-            
-            // Garante que o botão de brinde volte ao normal
-            renderizarBotaoBrinde();
+                // 2. Se salvou, imprime o recibo
+                imprimirRecibo(); 
+
+                // 3. Informa o usuário e limpa o estado
+                let troco = trocoNecessario > 0 ? formatarPreco(trocoNecessario) : 'Nenhum';
+                let mensagemTipo = tipoFinalizacao === 'BRINDE' ? 'BRINDE/CORTESIA' : 'PAGO';
+                
+                alert(`
+                    Venda Finalizada como ${mensagemTipo}!\n
+                    Recibo impresso.\n
+                    ------------------------------\n
+                    Total da Compra: ${formatarPreco(valorTotal)}\n
+                    Valor Registrado: ${formatarPreco(valorPago)}\n
+                    ${tipoFinalizacao === 'PAGO' ? 'Troco a ser dado: ' + troco : ''}
+                `);
+
+                carrinho = [];
+                valorPago = 0;
+                valorTotal = 0;
+                trocoNecessario = 0;
+                pagamentosEfetuados = []; 
+                renderizarCarrinho();
+                renderizarBotaoBrinde();
+
+            } catch (error) {
+                // Se der erro ao salvar, avisa o usuário e não continua
+                console.error("Erro ao salvar venda: ", error);
+                alert("ERRO CRÍTICO: A venda NÃO foi salva no banco de dados. A impressão foi cancelada. Verifique sua conexão ou as regras do Firebase. Tente novamente.");
+            }
+            // --- FIM LÓGICA FIREBASE ---
         };
 
-        // 6. Função de Cancelamento de Pedido
         const cancelarPedido = () => {
             if (carrinho.length > 0) {
-                if (confirm('Tem certeza que deseja cancelar o pedido atual? O carrinho será limpo e o pagamento será resetado.')) {
+                if (confirm('Tem certeza que deseja cancelar o pedido atual?')) {
                     carrinho = []; 
                     valorPago = 0;
                     valorTotal = 0;
@@ -229,8 +295,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
         
-        // --- Lógica do Input de Senha Brinde (NOVA) ---
-
         const renderizarBotaoBrinde = () => {
              brindeContainer.innerHTML = `
                 <button class="btn-brinde" id="btn-dar-brinde">
@@ -262,7 +326,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             `;
             
-            // Adiciona Listeners
             document.getElementById('btn-confirmar-brinde').addEventListener('click', processarBrinde);
             document.getElementById('btn-cancelar-brinde').addEventListener('click', renderizarBotaoBrinde);
             document.getElementById('brinde-senha-input').focus();
@@ -273,38 +336,24 @@ document.addEventListener('DOMContentLoaded', () => {
             const senhaDigitada = senhaInput.value;
 
             if (senhaDigitada === SENHA_SUPERVISOR) {
-                // Senha correta: Trata o pedido como pago (Brinde)
-                
-                // Simula o pagamento total (valor pago = valor total)
                 valorPago = valorTotal; 
                 pagamentosEfetuados = [{ tipo: 'BRINDE (Cortesia)', valor: valorTotal }];
-                
-                // Finaliza a venda
                 finalizarVenda('BRINDE'); 
-
             } else {
-                // Senha incorreta
-                alert('Senha incorreta. A venda não foi autorizada como brinde.');
+                alert('Senha incorreta.');
                 senhaInput.value = '';
                 senhaInput.focus();
-                // O botão de brinde permanece como input para nova tentativa
             }
         };
-        // --- Fim Lógica do Input de Senha Brinde ---
-
-
         
-        // 7. Manipula a mudança de forma de pagamento para input
         const alternarInputPagamento = (btnElement, tipo) => {
             if (carrinho.length === 0) return;
             
-            // 1. Garante que todos os inputs ativos voltem a ser botões antes de abrir um novo input
             document.querySelectorAll('.input-pagamento-container').forEach(container => {
                 const tipoAntigo = container.getAttribute('data-tipo');
                 container.outerHTML = renderizarBotaoPagamento(tipoAntigo);
             });
             
-            // 2. Determina o valor sugerido
             let valorSugerido = valorRestante > 0 ? valorRestante : valorTotal;
             if (valorPago > 0) {
                 valorSugerido = Math.max(0, valorRestante);
@@ -314,7 +363,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 valorSugerido = 0;
             }
 
-            // 3. Cria o HTML do input
             const inputHTML = `
                 <div class="input-pagamento-container" data-tipo="${tipo}">
                     <input type="number" 
@@ -330,48 +378,35 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             `;
             
-            // 4. Substitui o botão original pelo input
             btnElement.outerHTML = inputHTML;
             
-            // 5. Adiciona listener ao novo botão de confirmação
             document.querySelector('.btn-confirmar-pagamento').addEventListener('click', (e) => {
                 const tipoPagamento = e.currentTarget.getAttribute('data-tipo');
                 const input = document.getElementById(`input-${tipoPagamento}`);
                 let valorDigitado = parseFloat(input.value);
 
                 if (isNaN(valorDigitado) || valorDigitado <= 0) {
-                    // Volta para o estado de botão se o valor for inválido ou zero
                     renderizarOpcoesPagamento(); 
                     return;
                 }
                 
-                // Processa o pagamento
                 processarPagamento(tipoPagamento, valorDigitado);
             });
 
-            // Foca no campo de input
             const inputElement = document.getElementById(`input-${tipo}`);
             if(inputElement) inputElement.focus();
         };
         
-        // 8. Processa o valor inserido (GARANTE QUE OS BOTÕES VOLTEM AO NORMAL)
         const processarPagamento = (tipo, valor) => {
             if (valorTotal === 0) return;
             
-            // Adiciona o pagamento à lista
             pagamentosEfetuados.push({ tipo: tipo, valor: valor });
-
-            // Atualiza o valor pago total
             valorPago += valor;
             
-            // 1. Renderiza novamente a área de pagamento para restaurar os botões
             renderizarOpcoesPagamento(); 
-            
-            // 2. Recalcula e atualiza o resumo (FALTA/TROCO/FINALIZAR)
             calcularTotalEAtualizarResumo();
         };
 
-        // 9. Estrutura para renderizar um botão (Atualizado para débito e crédito)
         const renderizarBotaoPagamento = (tipo) => {
              const classes = {
                 'pix': 'btn-pix',
@@ -393,7 +428,6 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
         }
 
-        // 10. Renderiza a Estrutura do Carrinho (Produtos)
         const renderizarCarrinho = () => {
             if (carrinho.length === 0) {
                 carrinhoLista.innerHTML = '<p style="text-align: center; color: var(--text-muted); margin-top: 50px;">Carrinho vazio.</p>';
@@ -430,7 +464,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 carrinhoLista.appendChild(listItem);
             });
 
-            // Adiciona listeners para todos os botões de controle do item
             carrinhoLista.querySelectorAll('.btn-controle').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const itemId = e.currentTarget.getAttribute('data-id');
@@ -439,14 +472,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             });
 
-            // Chama as funções de resumo e pagamento (Atualiza o lado direito do PDV)
             calcularTotalEAtualizarResumo();
             renderizarOpcoesPagamento(); 
         };
         
-        // 11. Renderiza os Botões de Opções de Pagamento (Dinâmico)
         const renderizarOpcoesPagamento = () => {
-             // Só renderiza os botões se houver valor restante OU se ainda não houve pagamento (valorPago === 0)
             if (valorRestante <= 0 && valorPago > 0) return;
 
              const opcoesHTML = `
@@ -458,11 +488,9 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const opcoesContainer = document.getElementById('opcoes-pagamento');
             if (opcoesContainer) {
-                 // Mantém o grid de 2 colunas para 4 botões
                 opcoesContainer.style.gridTemplateColumns = 'repeat(2, 1fr)'; 
                 opcoesContainer.innerHTML = opcoesHTML;
 
-                // Reassocia listeners aos novos botões restaurados
                 opcoesContainer.querySelectorAll('.btn-pagamento').forEach(btn => {
                     if (!btn.classList.contains('btn-cancelar')) {
                         btn.addEventListener('click', (e) => {
@@ -474,8 +502,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
-
-        // 3. Função para Manipular Quantidade 
         const manipularQuantidade = (itemId, acao) => {
             const index = carrinho.findIndex(item => item.id === itemId);
 
@@ -502,8 +528,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
-
-        // Inicialização: Renderiza os cartões de produtos
         const renderizarProdutos = () => {
             if (!acessoRapidoGrid || !outrosProdutosGrid) return;
 
@@ -532,7 +556,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         };
         
-        // Adiciona ao carrinho
         const adicionarAoCarrinho = (produto) => {
             const itemExistente = carrinho.find(item => item.id === produto.id);
 
@@ -541,17 +564,14 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 carrinho.push({ ...produto, quantidade: 1 });
             }
-            // Reseta o pagamento ao alterar o carrinho
             valorPago = 0; 
             pagamentosEfetuados = [];
             
-            // CHAMADA PRINCIPAL PARA ATUALIZAR A TELA
             renderizarCarrinho();
         };
 
-        // Inicialização ao carregar a página
         renderizarProdutos();
         renderizarCarrinho();
-        renderizarBotaoBrinde(); // Inicializa o botão de brinde
+        renderizarBotaoBrinde();
     }
 });

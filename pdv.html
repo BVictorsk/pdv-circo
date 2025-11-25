@@ -72,7 +72,7 @@
                     </button>
                     <button class="btn-pagamento btn-debito" data-tipo="debito">
                         💳 Débito
-                    </button>                    
+                    </button>                  
                     <button class="btn-pagamento btn-dinheiro" data-tipo="dinheiro">
                         💵 Dinheiro
                     </button>
@@ -84,6 +84,17 @@
         </section>
     </main>
 
+    <!-- Firebase SDKs - Adicionados para integração -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+    <!-- Configuração do Firebase (contém suas chaves) -->
+    <script src="firebase-config.js"></script>
+    
+    <!-- Correção: Garantir que o objeto 'db' do Firestore seja inicializado -->
+    <script>const db = firebase.firestore();</script>
+
+    <!-- Script principal do PDV -->
     <script src="script.js"></script>
 </body>
 </html>

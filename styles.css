@@ -542,56 +542,49 @@ body {
 /* --- ESTILO PARA INPUT DE PAGAMENTO --- */
 
 .input-pagamento-container {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    padding: 5px;
+    display: flex; 
+    flex-direction: row;
+    align-items: center;
+    gap: 10px; 
     background-color: var(--input-bg);
     border-radius: 8px;
     height: 60px; 
-    box-sizing: border-box;
-    overflow: hidden;
+    padding: 10px;
 }
 
 .input-pagamento-valor {
-    width: 100%;
-    padding: 5px;
+    flex-grow: 1;
+    padding: 10px;
     background-color: var(--card-dark);
     border: 1px solid var(--purple-main);
-    border-radius: 4px;
+    border-radius: 6px;
     color: var(--text-light);
-    font-size: 14px;
-    text-align: right;
-    height: 25px; 
-    box-sizing: border-box;
-    
-    /* CORREÇÃO/ADICIONADO PARA COMPATIBILIDADE: */
-    -moz-appearance: textfield; /* Para Firefox */
-    -webkit-appearance: none; /* Para Chrome/Safari/Edge */
-    appearance: none; /* Padrão */
+    font-size: 18px;
+    text-align: center;
+    height: 100%;
+    -moz-appearance: textfield;
+    appearance: textfield;
 }
 
-/* Esconde setas do input number */
 .input-pagamento-valor::-webkit-outer-spin-button,
 .input-pagamento-valor::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
 }
 
-
 .btn-confirmar-pagamento {
-    width: 100%;
-    padding: 2px 5px;
+    padding: 0 20px;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     background-color: var(--purple-main);
     color: var(--text-light);
     font-weight: 600;
     cursor: pointer;
-    font-size: 10px; 
-    height: 18px; 
+    font-size: 14px; 
+    height: 100%; 
     transition: background-color 0.2s;
 }
+
 
 .btn-finalizar {
     margin-top: 15px;
@@ -782,7 +775,6 @@ body {
         font-size: 24px;
     }
 
-    /* Em telas muito pequenas, 4 botões em 2 colunas podem ficar muito apertados. Voltamos para 1 coluna ou adaptamos. */
     .opcoes-pagamento {
         grid-template-columns: 1fr 1fr; 
     }
