@@ -783,3 +783,61 @@ body {
         grid-column: span 2; 
     }
 }
+
+@media (max-width: 400px) {
+    .produtos-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .produto-card {
+        height: 90px;
+        padding: 8px;
+    }
+    
+    .produto-card .nome {
+        font-size: 11px;
+    }
+    
+    .produto-card .preco {
+        font-size: 13px;
+    }
+
+    .btn-pagamento {
+        font-size: 12px;
+        padding: 12px 5px;
+        height: 50px;
+    }
+
+    .pdv-header-right {
+        gap: 5px;
+    }
+    
+    .pdv-header-right .btn-header {
+        padding: 5px 8px;
+    }
+
+    .carrinho-conteudo {
+        max-height: 200px;
+    }
+
+    .pdv-carrinho {
+        padding: 15px;
+    }
+
+    .input-pagamento-container {
+        flex-direction: column;
+        height: auto;
+        padding: 15px;
+    }
+
+    .input-pagamento-valor,
+    .btn-confirmar-pagamento {
+        width: 100%;
+        height: 45px;
+    }
+
+    .btn-confirmar-pagamento {
+        padding: 0;
+    }
+}
