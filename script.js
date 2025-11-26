@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let trocoNecessario = 0;
     let pagamentosEfetuados = []; 
 
-    const alternarInputPagamento acessoRapidoGrid = document.getElementById('acesso-rapido-grid');
+    const acessoRapidoGrid = document.getElementById('acesso-rapido-grid');
     const outrosProdutosGrid = document.getElementById('outros-produtos-grid');
     const carrinhoLista = document.getElementById('carrinho-lista');
     const userDisplay = document.getElementById('user-display');
@@ -319,7 +319,7 @@ document.addEventListener('DOMContentLoaded', () => {
                            style="flex-grow: 1; padding: 8px; font-size: 14px; border: none;">
                     <button id="btn-confirmar-brinde" class="btn-primary" style="padding: 8px 12px;">
                         🔑 OK
-                    </button>
+                    </button
                     <button id="btn-cancelar-brinde" class="btn-controle btn-cancelar-item" style="padding: 4px; width: 20px; height: 20px; font-size: 14px;">
                         &times;
                     </button>
@@ -345,58 +345,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 senhaInput.focus();
             }
         };
-        
-        const alternarInputPagamento = (btnElement, tipo) => {
-            if (carrinho.length === 0) return;
-            
-            document.querySelectorAll('.input-pagamento-container').forEach(container => {
-                const tipoAntigo = container.getAttribute('data-tipo');
-                container.outerHTML = renderizarBotaoPagamento(tipoAntigo);
-            });
-            
-            let valorSugerido = valorRestante > 0 ? valorRestante : valorTotal;
-            if (valorPago > 0) {
-                valorSugerido = Math.max(0, valorRestante);
-            } else if (valorTotal > 0) {
-                valorSugerido = valorTotal;
-            } else {
-                valorSugerido = 0;
-            }
 
-            const inputHTML = `
-                <div class="input-pagamento-container" data-tipo="${tipo}">
-                    <input type="number" 
-                           id="input-${tipo}"
-                           class="input-pagamento-valor" 
-                           placeholder="${formatarPreco(valorSugerido)}"
-                           value="${valorSugerido > 0 ? valorSugerido.toFixed(2) : '0.00'}"
-                           min="0"
-                           step="0.01">
-                    <button class="btn-confirmar-pagamento" data-tipo="${tipo}">
-                        OK
-                    </button>
-                </div>
-            `;
-            
-            btnElement.outerHTML = inputHTML;
-            
-            document.querySelector('.btn-confirmar-pagamento').addEventListener('click', (e) => {
-                const tipoPagamento = e.currentTarget.getAttribute('data-tipo');
-                const input = document.getElementById(`input-${tipoPagamento}`);
-                let valorDigitado = parseFloat(input.value);
-
-                if (isNaN(valorDigitado) || valorDigitado <= 0) {
-                    renderizarOpcoesPagamento(); 
-                    return;
-                }
-                
-                processarPagamento(tipoPagamento, valorDigitado);
-            });
-
-            const inputElement = document.getElementById(`input-${tipo}`);
-            if(inputElement) inputElement.focus();
-        };
-        
         const processarPagamento = (tipo, valor) => {
             if (valorTotal === 0) return;
             
@@ -427,6 +376,90 @@ document.addEventListener('DOMContentLoaded', () => {
                 </button>
             `;
         }
+        
+        const renderizarOpcoesPagamento = (inputAtivo = null) => {
+            const opcoesContainer = document.getElementById('opcoes-pagamento');
+            if (!opcoesContainer) return;
+
+            if (valorRestante <= 0 && valorPago > 0) {
+                opcoesContainer.innerHTML = '';
+                return;
+            }
+
+            const tipos = ['pix', 'debito', 'credito', 'dinheiro'];
+            let valorSugerido = valorRestante > 0 ? valorRestante : valorTotal;
+             if (valorPago > 0) {
+                valorSugerido = Math.max(0, valorRestante);
+            } else if (valorTotal > 0) {
+                valorSugerido = valorTotal;
+            } else {
+                valorSugerido = 0;
+            }
+
+            const opcoesHTML = tipos.map(tipo => {
+                if (tipo === inputAtivo) {
+                    return `
+                        <div class="input-pagamento-container" data-tipo="${tipo}">
+                            <input type="number" 
+                                   id="input-${tipo}"
+                                   class="input-pagamento-valor" 
+                                   placeholder="${formatarPreco(valorSugerido)}"
+                                   value="${valorSugerido > 0 ? valorSugerido.toFixed(2) : '0.00'}"
+                                   min="0"
+                                   step="0.01">
+                            <button class="btn-confirmar-pagamento" data-tipo="${tipo}">
+                                OK
+                            </button>
+                        </div>
+                    `;
+                }
+                return renderizarBotaoPagamento(tipo);
+            }).join('');
+
+            opcoesContainer.style.gridTemplateColumns = 'repeat(2, 1fr)';
+            opcoesContainer.innerHTML = opcoesHTML;
+
+            opcoesContainer.querySelectorAll('.btn-pagamento').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const tipo = e.currentTarget.getAttribute('data-tipo');
+                    if (opcoesContainer.querySelector('.input-pagamento-container')?.getAttribute('data-tipo') === tipo) {
+                        renderizarOpcoesPagamento();
+                    } else {
+                        renderizarOpcoesPagamento(tipo);
+                    }
+                });
+            });
+
+            const btnConfirmar = opcoesContainer.querySelector('.btn-confirmar-pagamento');
+            if (btnConfirmar) {
+                btnConfirmar.addEventListener('click', (e) => {
+                    const tipoPagamento = e.currentTarget.getAttribute('data-tipo');
+                    const input = document.getElementById(`input-${tipoPagamento}`);
+                    let valorDigitado = parseFloat(input.value);
+
+                    if (isNaN(valorDigitado) || valorDigitado <= 0) {
+                        renderizarOpcoesPagamento();
+                        return;
+                    }
+                    processarPagamento(tipoPagamento, valorDigitado);
+                });
+            }
+
+            const inputElement = opcoesContainer.querySelector('.input-pagamento-valor');
+            if (inputElement) {
+                inputElement.focus();
+                 inputElement.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        btnConfirmar.click();
+                    }
+                     if (e.key === 'Escape') {
+                        e.preventDefault();
+                         renderizarOpcoesPagamento();
+                    }
+                });
+            }
+        };
 
         const renderizarCarrinho = () => {
             if (carrinho.length === 0) {
@@ -476,32 +509,6 @@ document.addEventListener('DOMContentLoaded', () => {
             renderizarOpcoesPagamento(); 
         };
         
-        const renderizarOpcoesPagamento = () => {
-            if (valorRestante <= 0 && valorPago > 0) return;
-
-             const opcoesHTML = `
-                ${renderizarBotaoPagamento('pix')}
-                ${renderizarBotaoPagamento('debito')} 
-                ${renderizarBotaoPagamento('credito')} 
-                ${renderizarBotaoPagamento('dinheiro')}
-             `;
-            
-            const opcoesContainer = document.getElementById('opcoes-pagamento');
-            if (opcoesContainer) {
-                opcoesContainer.style.gridTemplateColumns = 'repeat(2, 1fr)'; 
-                opcoesContainer.innerHTML = opcoesHTML;
-
-                opcoesContainer.querySelectorAll('.btn-pagamento').forEach(btn => {
-                    if (!btn.classList.contains('btn-cancelar')) {
-                        btn.addEventListener('click', (e) => {
-                            const tipo = e.currentTarget.getAttribute('data-tipo');
-                            alternarInputPagamento(e.currentTarget, tipo);
-                        });
-                    }
-                });
-            }
-        };
-
         const manipularQuantidade = (itemId, acao) => {
             const index = carrinho.findIndex(item => item.id === itemId);
 
