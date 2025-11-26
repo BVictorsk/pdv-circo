@@ -673,6 +673,22 @@ body {
 
 /* --- RESPONSIVIDADE (MEDIA QUERIES) --- */
 
+@media (min-width: 801px) {
+    .opcoes-pagamento.pagamento-ativo {
+        grid-template-columns: 1fr;
+    }
+
+    .input-pagamento-container {
+        flex-direction: column;
+        height: auto;
+    }
+    
+    .input-pagamento-valor, .btn-confirmar-pagamento {
+        height: 60px;
+        width: 100%;
+    }
+}
+
 @media (min-width: 601px) and (max-width: 800px) {
     .input-pagamento-container {
         flex-direction: row;

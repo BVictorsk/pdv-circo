@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let trocoNecessario = 0;
     let pagamentosEfetuados = []; 
 
-    const acessoRapidoGrid = document.getElementById('acesso-rapido-grid');
+    const alternarInputPagamento acessoRapidoGrid = document.getElementById('acesso-rapido-grid');
     const outrosProdutosGrid = document.getElementById('outros-produtos-grid');
     const carrinhoLista = document.getElementById('carrinho-lista');
     const userDisplay = document.getElementById('user-display');
