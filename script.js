@@ -373,7 +373,7 @@ document.addEventListener('DOMContentLoaded', () => {
                            min="0"
                            step="0.01">
                     <button class="btn-confirmar-pagamento" data-tipo="${tipo}">
-                        CONFIRMAR
+                        OK
                     </button>
                 </div>
             `;
