@@ -1,0 +1,12 @@
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ATENÇÃO: Regras abertas para desenvolvimento.
+    // Permite leitura e escrita em TODOS os documentos por qualquer pessoa.
+    // Isso é necessário para que os painéis (superadmin, admin) e o login customizado funcionem.
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
