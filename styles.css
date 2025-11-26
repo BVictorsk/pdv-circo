@@ -89,7 +89,7 @@ body {
 }
 
 .icon-lock {
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23a1a1aa'%3E%3Cpath d='M12 17a1 1 0 0 1 1 1v2a1 1 0 0 1-2 0v-2a1 1 0 0 1 1-1zM6 10a6 6 0 0 1 12 0v2h-2V10a4 4 0 0 0-8 0v2H6v-2zm12 2h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1h2v2h12v-2z'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23a1a1aa'%3E%3Cpath d='M12 17a1 1 0 0 1 1 1v2a1 1 0 0 1-2 0v-2a1 1 0 0 1 1-1zM6 10a6 6 0 0 1 12 0v2h-2V10a4 4 0 0 0-8 0v2H6v-2zm12 2h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1-1H4a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1h2v2h12v-2z'/%3E%3C/svg%3E");
     background-size: 20px;
 }
 
@@ -543,12 +543,11 @@ body {
 
 .input-pagamento-container {
     display: flex; 
-    flex-direction: row;
+    flex-direction: column;
     align-items: center;
     gap: 10px; 
     background-color: var(--input-bg);
     border-radius: 8px;
-    height: 60px; 
     padding: 10px;
 }
 
@@ -564,6 +563,7 @@ body {
     height: 100%;
     -moz-appearance: textfield;
     appearance: textfield;
+    width: 100%;
 }
 
 .input-pagamento-valor::-webkit-outer-spin-button,
@@ -573,7 +573,7 @@ body {
 }
 
 .btn-confirmar-pagamento {
-    padding: 0 20px;
+    padding: 15px 20px;
     border: none;
     border-radius: 6px;
     background-color: var(--purple-main);
@@ -581,7 +581,7 @@ body {
     font-weight: 600;
     cursor: pointer;
     font-size: 14px; 
-    height: 100%; 
+    width: 100%;
     transition: background-color 0.2s;
 }
 
@@ -672,6 +672,20 @@ body {
 }
 
 /* --- RESPONSIVIDADE (MEDIA QUERIES) --- */
+
+@media (min-width: 601px) and (max-width: 800px) {
+    .input-pagamento-container {
+        flex-direction: row;
+        height: 60px;
+    }
+    .input-pagamento-valor {
+        width: auto;
+    }
+    .btn-confirmar-pagamento {
+        width: auto;
+        height: 100%;
+    }
+}
 
 @media (max-width: 800px) {
     .pdv-main {
@@ -826,27 +840,18 @@ body {
     }
 
     .input-pagamento-container {
-        display: flex;
-        flex-direction: row;
         gap: 5px;
-        height: 50px;
+        height: auto;
         padding: 5px;
-        align-items: center;
-        background-color: var(--input-bg);
-        border-radius: 8px;
     }
 
     .input-pagamento-valor {
-        flex-grow: 1;
-        width: auto;
         font-size: 16px;
         padding: 8px;
     }
 
     .btn-confirmar-pagamento {
-        flex-shrink: 0;
-        width: auto;
-        padding: 0 15px;
+        padding: 10px 15px;
         font-size: 12px;
     }
 }
