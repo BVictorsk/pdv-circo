@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Admin - Circus Max</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="pdv-header">
+        <div class="pdv-header-left">
+            Circus Max - Painel Administrativo
+        </div>
+        <div class="pdv-header-right">
+            <span style="color: var(--text-muted); font-size: 14px;">Logado como: <strong id="user-display">admin</strong></span>
+            <button class="btn-header btn-fechar" onclick="location.href='index.html'">
+                ❌ Sair
+            </button>
+        </div>
+    </header>
+
+    <main class="admin-main">
+        <div class="tab">
+            <button class="tablinks" onclick="openTab(event, 'Vendas')" id="defaultOpen">Vendas</button>
+            <button class="tablinks" onclick="openTab(event, 'Produtos')">Produtos</button>
+            <button class="tablinks" onclick="openTab(event, 'Usuarios')">Usuários</button>
+            <button class="tablinks" onclick="openTab(event, 'Notas')">Notas</button>
+        </div>
+
+        <div id="Vendas" class="tabcontent">
+            <h3>Vendas</h3>
+            <p>Conteúdo da aba Vendas.</p>
+        </div>
+
+        <div id="Produtos" class="tabcontent">
+            <h3>Produtos</h3>
+            <button id="btn-adicionar-item">Adicionar Item</button>
+            <div id="form-adicionar-item" style="display:none;">
+                <input type="text" id="item-icone" placeholder="Ícone">
+                <input type="text" id="item-id" placeholder="ID">
+                <input type="text" id="item-nome" placeholder="Nome">
+                <input type="number" id="item-preco" placeholder="Preço">
+                <label>
+                    <input type="checkbox" id="item-rapido">
+                    Acesso Rápido
+                </label>
+                <button id="btn-salvar-item">Salvar</button>
+            </div>
+        </div>
+
+        <div id="Usuarios" class="tabcontent">
+            <h3>Usuários</h3>
+            <p>Conteúdo da aba Usuários.</p>
+        </div>
+
+        <div id="Notas" class="tabcontent">
+            <h3>Notas</h3>
+            <p>Conteúdo da aba Notas.</p>
+        </div>
+    </main>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script>const db = firebase.firestore();</script>
+    <script src="portal_admin.js"></script>
+</body>
+</html>
