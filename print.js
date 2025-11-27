@@ -43,14 +43,75 @@ function imprimirRecibo(vendaId, carrinho, valorTotal, pagamentosEfetuados, troc
     dadosParaImpressao += `------------------------------\n`;
     dadosParaImpressao += `Obrigado e volte sempre!\n\n\n\n\n  <cut>\n`; // Comando de corte
 
+    // Helpers: converter texto para ESC/POS (Base64) para impressoras térmicas
+    function uint8ToBase64(u8) {
+        let binary = '';
+        for (let i = 0; i < u8.length; i++) {
+            binary += String.fromCharCode(u8[i]);
+        }
+        return btoa(binary);
+    }
+
+    function escposBase64ForText(text) {
+        try {
+            const encoder = typeof TextEncoder !== 'undefined' ? new TextEncoder() : null;
+            let textBytes;
+            if (encoder) {
+                textBytes = encoder.encode(text + '\n\n\n');
+            } else {
+                const str = unescape(encodeURIComponent(text + '\n\n\n'));
+                textBytes = new Uint8Array(str.length);
+                for (let i = 0; i < str.length; i++) textBytes[i] = str.charCodeAt(i);
+            }
+
+            // Corte parcial comum: GS V 65 0  (pode variar conforme modelo)
+            const cut = new Uint8Array([0x1D, 0x56, 0x41, 0x00]);
+            const data = new Uint8Array(textBytes.length + cut.length);
+            data.set(textBytes, 0);
+            data.set(cut, textBytes.length);
+            return uint8ToBase64(data);
+        } catch (err) {
+            console.error('Erro ao gerar ESC/POS Base64:', err);
+            return null;
+        }
+    }
+
     // 1. Tentar imprimir via interface AndroidPrint (mini app)
-    if (window.AndroidPrint && typeof window.AndroidPrint.print === 'function') {
-        console.log("Enviando dados para impressão para o mini app Android:", dadosParaImpressao);
-        window.AndroidPrint.print(dadosParaImpressao);
-    } else {
-        // 2. Fallback para a interface AndroidInterface (antiga, se existir)
-        if (window.AndroidInterface && window.AndroidInterface.imprimirCupom) {
-            console.log("Interface AndroidPrint não encontrada, tentando AndroidInterface (legado).");
+    if (window.AndroidPrint) {
+        console.log('AndroidPrint detectado. Tentando múltiplos métodos de envio...');
+        // Preferir método que aceite Base64/raw bytes
+        if (typeof window.AndroidPrint.printBase64 === 'function') {
+            const b64 = escposBase64ForText(dadosParaImpressao);
+            if (b64) {
+                console.log('Enviando Base64 ESC/POS para AndroidPrint.printBase64');
+                try { window.AndroidPrint.printBase64(b64); return; } catch (e) { console.error(e); }
+            }
+        }
+        // Métodos de texto conhecidos
+        if (typeof window.AndroidPrint.print === 'function') {
+            console.log('Enviando texto para AndroidPrint.print');
+            try { window.AndroidPrint.print(dadosParaImpressao); return; } catch (e) { console.error(e); }
+        }
+        if (typeof window.AndroidPrint.printText === 'function') {
+            console.log('Enviando texto para AndroidPrint.printText');
+            try { window.AndroidPrint.printText(dadosParaImpressao); return; } catch (e) { console.error(e); }
+        }
+        // Se houver um método genérico para envio de bytes
+        if (typeof window.AndroidPrint.sendBytes === 'function') {
+            const b64 = escposBase64ForText(dadosParaImpressao);
+            if (b64) {
+                console.log('Enviando Base64 para AndroidPrint.sendBytes');
+                try { window.AndroidPrint.sendBytes(b64); return; } catch (e) { console.error(e); }
+            }
+        }
+        console.warn('AndroidPrint presente, mas nenhum método conhecido funcionou. Chaves disponíveis:', Object.keys(window.AndroidPrint));
+    }
+
+    // 2. Fallback para a interface AndroidInterface (antiga, se existir)
+    if (window.AndroidInterface) {
+        console.log('AndroidInterface detectado. Tentando métodos legados...');
+        if (typeof window.AndroidInterface.imprimirCupom === 'function') {
+            console.log('Usando AndroidInterface.imprimirCupom com JSON (legado).');
             const reciboParaAndroid = {
                 ...recibo,
                 total: formatarPreco(recibo.total),
@@ -64,10 +125,17 @@ function imprimirRecibo(vendaId, carrinho, valorTotal, pagamentosEfetuados, troc
                 })),
                 troco: formatarPreco(recibo.troco)
             };
-            window.AndroidInterface.imprimirCupom(JSON.stringify(reciboParaAndroid), "192.168.1.200");
-        } else {
-            // 3. Fallback para impressão via navegador (método existente)
-            console.log("Nenhuma interface Android detectada. Imprimindo via navegador.");
+            try { window.AndroidInterface.imprimirCupom(JSON.stringify(reciboParaAndroid), "192.168.1.200"); return; } catch (e) { console.error(e); }
+        }
+        if (typeof window.AndroidInterface.imprimirTexto === 'function') {
+            console.log('Usando AndroidInterface.imprimirTexto (legado)');
+            try { window.AndroidInterface.imprimirTexto(dadosParaImpressao); return; } catch (e) { console.error(e); }
+        }
+        console.warn('AndroidInterface presente, mas nenhum método legível funcionou. Chaves disponíveis:', Object.keys(window.AndroidInterface));
+    }
+
+    // 3. Fallback para impressão via navegador (método existente)
+    console.log("Nenhuma interface Android detectada ou nenhum método funcionou. Imprimindo via navegador.");
             let itensReciboHTML = recibo.itens.map(item => `
                 <tr>
                     <td>${item.qtd}x ${item.produto}</td>
@@ -120,6 +188,4 @@ function imprimirRecibo(vendaId, carrinho, valorTotal, pagamentosEfetuados, troc
             printWindow.focus();
             printWindow.print();
             printWindow.close();
-        }
-    }
 }
