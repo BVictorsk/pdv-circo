@@ -17,84 +17,86 @@ document.addEventListener('DOMContentLoaded', async () => {
             mensagemNenhumaTransacao.textContent = "Erro: Não foi possível carregar as transações. Verifique a configuração do Firebase.";
             mensagemNenhumaTransacao.style.display = "block";
         }
-        return;
+        return; // Stop execution if db is not defined
     }
 
-    if (!loggedInUser) {
-        if (mensagemNenhumaTransacao) {
-            mensagemNenhumaTransacao.textContent = "Nenhum usuário logado. Por favor, faça login para ver suas transações.";
-            mensagemNenhumaTransacao.style.display = "block";
-        }
-        return;
-    }
-
-    // Função para formatar o preço para exibição
     const formatarPreco = (valor) => `R$ ${valor.toFixed(2).replace('.', ',')}`;
+    const formatarData = (timestamp) => {
+        if (!timestamp) return 'N/A';
+        const date = timestamp.toDate(); // Converte Timestamp do Firestore para objeto Date
+        return `${date.toLocaleDateString('pt-BR')} ${date.toLocaleTimeString('pt-BR')}`;
+    };
 
-    try {
-        // Busca todas as vendas no Firestore
-        const vendasSnapshot = await db.collection("vendas").where("operador", "==", loggedInUser).orderBy("timestamp", "desc").get();
+    async function fetchVendasFromFirestore() {
+        try {
+            // Ordena as vendas pela data mais recente (timestamp decrescente)
+            const snapshot = await db.collection("vendas").orderBy("timestamp", "desc").get();
+            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        } catch (error) {
+            console.error("Erro ao carregar vendas do Firestore: ", error);
+            return [];
+        }
+    }
 
-        if (vendasSnapshot.empty) {
+    function renderVendas(vendas) {
+        if (!transacoesGrid) return;
+
+        if (vendas.length === 0) {
             if (mensagemNenhumaTransacao) {
+                mensagemNenhumaTransacao.textContent = "Nenhuma transação encontrada.";
                 mensagemNenhumaTransacao.style.display = "block";
             }
+            transacoesGrid.innerHTML = '';
             return;
         }
 
         if (mensagemNenhumaTransacao) {
-            mensagemNenhumaTransacao.style.display = "none"; // Oculta a mensagem se houver transações
+            mensagemNenhumaTransacao.style.display = "none";
         }
 
-        vendasSnapshot.forEach(doc => {
-            const venda = doc.data();
-            const vendaId = doc.id;
-            const card = document.createElement("div");
-            card.className = "produto-card"; // Reutilizando o estilo do card de produto para as vendas
+        transacoesGrid.innerHTML = ''; // Limpa o grid antes de renderizar
 
-            const dataVenda = venda.timestamp ? new Date(venda.timestamp.toDate()).toLocaleString('pt-BR') : 'N/A';
+        vendas.forEach(venda => {
+            const vendaCard = document.createElement('div');
+            vendaCard.classList.add('transacao-card'); // Adicione uma classe para estilização
 
-            let itensHTML = '';
-            if (venda.itens && venda.itens.length > 0) {
-                itensHTML = '<ul class="venda-itens-lista">' + 
-                            venda.itens.map(item => `<li>${item.quantidade}x ${item.nome} (${formatarPreco(item.preco)})</li>`).join('') +
-                            '</ul>';
-            }
+            // Construir a lista de itens da venda
+            const itensHTML = venda.itens.map(item => `
+                <li>${item.quantidade}x ${item.nome} (${formatarPreco(item.preco)})</li>
+            `).join('');
 
-            let pagamentosHTML = '';
-            if (venda.pagamentos && venda.pagamentos.length > 0) {
-                pagamentosHTML = '<ul class="venda-pagamentos-lista">' + 
-                                 venda.pagamentos.map(pag => `<li>${pag.tipo}: ${formatarPreco(pag.valor)}</li>`).join('') +
-                                 '</ul>';
-            }
+            // Construir a lista de pagamentos
+            const pagamentosHTML = venda.pagamentos.map(pag => `
+                <li>${pag.tipo.toUpperCase()}: ${formatarPreco(pag.valor)}</li>
+            `).join('');
 
-            card.innerHTML = `
+            vendaCard.innerHTML = `
                 <div class="card-header">
-                    <div class="icone">🛍️</div>
-                    <div class="product-title-group">
-                        <div class="nome">Venda #${vendaId}</div>
-                        <div class="product-id-display">Operador: ${venda.operador || 'N/A'}</div>
-                    </div>
+                    <h3>Venda ID: ${venda.id}</h3>
+                    <span class="data">${formatarData(venda.timestamp)}</span>
                 </div>
                 <div class="card-body">
-                    <div class="venda-info"><strong>Data:</strong> ${dataVenda}</div>
-                    <div class="venda-info"><strong>Total:</strong> ${formatarPreco(venda.valorTotal || 0)}</div>
-                    ${itensHTML ? `<div class="venda-info"><strong>Itens:</strong>${itensHTML}</div>` : ''}
-                    ${pagamentosHTML ? `<div class="venda-info"><strong>Pagamentos:</strong>${pagamentosHTML}</div>` : ''}
-                    ${venda.troco > 0 ? `<div class="venda-info" style="color: var(--green-success);"><strong>Troco:</strong> ${formatarPreco(venda.troco)}</div>` : ''}
-                    <div class="venda-info"><strong>Status:</strong> ${venda.tipo || 'N/A'}</div>
+                    <p><strong>Total:</strong> ${formatarPreco(venda.valorTotal)}</p>
+                    <p><strong>Valor Pago:</strong> ${formatarPreco(venda.valorPago)}</p>
+                    ${venda.troco > 0 ? `<p><strong>Troco:</strong> ${formatarPreco(venda.troco)}</p>` : ''}
+                    <p><strong>Operador:</strong> ${venda.operador}</p>
+                    
+                    <h4>Itens:</h4>
+                    <ul>${itensHTML}</ul>
+
+                    <h4>Pagamentos:</h4>
+                    <ul>${pagamentosHTML}</ul>
                 </div>
             `;
-            if (transacoesGrid) {
-                transacoesGrid.appendChild(card);
-            }
+            transacoesGrid.appendChild(vendaCard);
         });
-
-    } catch (error) {
-        console.error("Erro ao carregar transações: ", error);
-        if (mensagemNenhumaTransacao) {
-            mensagemNenhumaTransacao.textContent = "Erro ao carregar suas transações. Tente novamente mais tarde.";
-            mensagemNenhumaTransacao.style.display = "block";
-        }
     }
+
+    // Inicializar a página
+    async function inicializarMinhasTransacoes() {
+        const vendas = await fetchVendasFromFirestore();
+        renderVendas(vendas);
+    }
+
+    inicializarMinhasTransacoes();
 });

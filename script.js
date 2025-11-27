@@ -234,7 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (window.AndroidInterface && window.AndroidInterface.imprimirCupom) {
                 console.log("Enviando recibo para Android:", recibo);
                 // Convertendo valores numéricos para string formatada para a interface Android, se necessário
-                const reciboParaAndroid = {
+                const finalizarVenda reciboParaAndroid = {
                     ...recibo,
                     total: formatarPreco(recibo.total),
                     itens: recibo.itens.map(item => ({
@@ -247,7 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     })),
                     troco: formatarPreco(recibo.troco)
                 };
-                window.AndroidInterface.imprimirCupom(JSON.stringify(reciboParaAndroid), "192.168.1.100");
+                window.AndroidInterface.imprimirCupom(JSON.stringify(reciboParaAndroid), "192.168.1.200");
             } else {
                 // 2. Fallback para impressão via navegador (método existente)
                 console.log("Interface Android não detectada. Imprimindo via navegador.");
