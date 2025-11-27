@@ -871,3 +871,58 @@ body {
         font-size: 12px;
     }
 }
+
+/* --- Estilos para o Painel Admin (abas) --- */
+
+.admin-main {
+    padding: 20px;
+}
+
+.tab {
+    overflow: hidden;
+    background-color: var(--card-dark);
+    border-radius: 12px;
+    margin-bottom: 20px;
+    display: flex; /* Para alinhar os botões de abas */
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.tab button {
+    background-color: inherit;
+    float: left;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    padding: 14px 20px;
+    transition: 0.3s;
+    font-size: 17px;
+    color: var(--text-light);
+    flex-grow: 1; /* Para que os botões preencham o espaço */
+}
+
+.tab button:hover {
+    background-color: var(--input-bg);
+}
+
+.tab button.active {
+    background-color: var(--purple-main);
+    color: var(--text-light);
+    font-weight: 700;
+}
+
+.tabcontent {
+    display: none;
+    padding: 20px;
+    border: 1px solid var(--card-dark);
+    border-radius: 12px;
+    background-color: var(--card-dark);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    min-height: 400px; /* Para dar espaço ao conteúdo */
+}
+
+.tabcontent h3 {
+    color: var(--purple-main);
+    margin-bottom: 15px;
+    border-bottom: 2px solid var(--input-bg);
+    padding-bottom: 10px;
+}

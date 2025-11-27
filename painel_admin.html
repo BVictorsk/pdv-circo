@@ -33,18 +33,44 @@
         </div>
 
         <div id="Produtos" class="tabcontent">
-            <h3>Produtos</h3>
-            <button id="btn-adicionar-item">Adicionar Item</button>
-            <div id="form-adicionar-item" style="display:none;">
-                <input type="text" id="item-icone" placeholder="Ícone">
-                <input type="text" id="item-id" placeholder="ID">
-                <input type="text" id="item-nome" placeholder="Nome">
-                <input type="number" id="item-preco" placeholder="Preço">
-                <label>
-                    <input type="checkbox" id="item-rapido">
-                    Acesso Rápido
-                </label>
-                <button id="btn-salvar-item">Salvar</button>
+            <h3>Gerenciar Produtos</h3>
+            <button id="btn-adicionar-produto" class="btn-primary">Adicionar Novo Produto</button>
+
+            <div id="form-adicionar-produto" class="form-container" style="display:none; margin-top: 20px; padding: 20px; background-color: var(--input-bg); border-radius: 8px;">
+                <h4>Adicionar Produto</h4>
+                <div class="input-group">
+                    <label for="produto-icone">Ícone (Emoji ou URL):</label>
+                    <input type="text" id="produto-icone" class="input-field" placeholder="Ex: 🍔, 🍟 ou https://link.icone.png">
+                </div>
+                <div class="input-group">
+                    <label for="produto-id">ID do Produto (único):</label>
+                    <input type="text" id="produto-id" class="input-field" placeholder="Ex: ref001">
+                </div>
+                <div class="input-group">
+                    <label for="produto-nome">Nome do Produto:</label>
+                    <input type="text" id="produto-nome" class="input-field" placeholder="Ex: Hambúrguer Clássico">
+                </div>
+                <div class="input-group">
+                    <label for="produto-preco">Preço:</label>
+                    <input type="text" id="produto-preco" class="input-field" placeholder="Ex: 25.50">
+                </div>
+                <div class="input-group">
+                    <label style="display:flex; align-items:center; gap: 10px;">
+                        <input type="checkbox" id="produto-acesso-rapido" style="width: auto;">
+                        Acesso Rápido (exibir no PDV principal)
+                    </label>
+                </div>
+                <button id="btn-salvar-produto" class="btn-primary" style="width: auto; padding: 10px 20px; margin-right: 10px; margin-top: 15px;">Salvar Produto</button>
+                <button id="btn-cancelar-produto" class="btn-fechar" style="width: auto; padding: 10px 20px; margin-top: 15px;">Cancelar</button>
+            </div>
+
+            <div id="lista-produtos-existentes" style="margin-top: 30px;">
+                <h4>Produtos Cadastrados</h4>
+                <p id="mensagem-nenhum-produto" style="color: var(--text-muted); text-align: center; padding: 20px; border: 1px dashed var(--input-bg); border-radius: 8px; margin-top: 15px;">Nenhum produto cadastrado ainda. Adicione um novo produto!</p>
+                <!-- Produtos serão carregados aqui via JavaScript -->
+                <div id="produtos-grid" class="produtos-grid" style="margin-top: 15px;">
+                    <!-- Cards de produtos serão inseridos aqui -->
+                </div>
             </div>
         </div>
 
@@ -62,7 +88,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js"></script>
-    <script>const db = firebase.firestore();</script>
     <script src="portal_admin.js"></script>
 </body>
 </html>
