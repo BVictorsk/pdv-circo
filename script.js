@@ -197,7 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // 1. Tentar imprimir via interface Android
             if (window.AndroidInterface && window.AndroidInterface.imprimirCupom) {
                 console.log("Enviando recibo para Android:", recibo);
-                window.AndroidInterface.imprimirCupom(JSON.stringify(recibo), "192.168.0.201");
+                window.AndroidInterface.imprimirCupom(JSON.stringify(recibo), "192.168.1.100");
             } else {
                 // 2. Fallback para impressão via navegador (método existente)
                 console.log("Interface Android não detectada. Imprimindo via navegador.");

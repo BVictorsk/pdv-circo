@@ -85,6 +85,7 @@ async function carregarProdutos() {
                                 data-nome="${produto.nome}"
                                 data-preco="${produto.preco}"
                                 data-acessorapido="${produto.acessoRapido}"
+                                data-setor="${produto.setor || ''}"
                                 title="Editar Produto">✏️</button>
                         <button class="btn-action btn-excluir-produto" data-id="${produtoId}" title="Excluir Produto">🗑️</button>
                     </div>
@@ -92,6 +93,7 @@ async function carregarProdutos() {
                 <div class="card-body">
                     ${acessoRapidoTag}
                     <div class="preco">R$ ${precoFormatado}</div>
+                    <div class="setor">Setor: ${produto.setor || 'N/A'}</div>
                 </div>
             `;
             if (produtosGrid) {
@@ -113,8 +115,8 @@ async function carregarProdutos() {
         // Adicionar event listeners para os botões de editar
         document.querySelectorAll(".btn-editar-produto").forEach(button => {
             button.addEventListener("click", (e) => {
-                const { id, icone, nome, preco, acessorapido } = e.target.dataset;
-                editarProduto(id, icone, nome, preco, acessorapido === 'true');
+                const { id, icone, nome, preco, acessorapido, setor } = e.target.dataset;
+                editarProduto(id, icone, nome, preco, acessorapido === 'true', setor);
             });
         });
 
@@ -142,7 +144,7 @@ async function removerProduto(id) {
 }
 
 // Função para editar um produto
-function editarProduto(id, icone, nome, preco, acessoRapido) {
+function editarProduto(id, icone, nome, preco, acessoRapido, setor) {
     console.error("editarProduto called for ID:", id);
     const formAdicionarProduto = document.getElementById("form-adicionar-produto");
     const btnAdicionarProduto = document.getElementById("btn-adicionar-produto");
@@ -152,8 +154,10 @@ function editarProduto(id, icone, nome, preco, acessoRapido) {
     const inputProdutoNome = document.getElementById("produto-nome");
     const inputProdutoPreco = document.getElementById("produto-preco");
     const inputProdutoAcessoRapido = document.getElementById("produto-acesso-rapido");
+    const selectProdutoSetor = document.getElementById("produto-setor");
 
-    if (!formAdicionarProduto || !btnAdicionarProduto || !btnSalvarProduto || !inputProdutoIcone || !inputProdutoId || !inputProdutoNome || !inputProdutoPreco || !inputProdutoAcessoRapido) {
+
+    if (!formAdicionarProduto || !btnAdicionarProduto || !btnSalvarProduto || !inputProdutoIcone || !inputProdutoId || !inputProdutoNome || !inputProdutoPreco || !inputProdutoAcessoRapido || !selectProdutoSetor) {
         console.error("Error: One or more required elements for editing product not found.");
         return;
     }
@@ -167,6 +171,7 @@ function editarProduto(id, icone, nome, preco, acessoRapido) {
     // e utilizando parseFloat para garantir que a formatação Intl.NumberFormat funcione corretamente.
     inputProdutoPreco.value = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(parseFloat(preco));
     inputProdutoAcessoRapido.checked = acessoRapido;
+    selectProdutoSetor.value = setor;
 
     // Armazena o ID do produto sendo editado e muda o texto do botão
     editingProductId = id;
@@ -264,12 +269,15 @@ document.addEventListener("DOMContentLoaded", () => {
         const prodNome = document.getElementById("produto-nome");
         const prodPreco = document.getElementById("produto-preco");
         const prodRapido = document.getElementById("produto-acesso-rapido");
+        const prodSetor = document.getElementById("produto-setor");
+
 
         if (prodIcone) prodIcone.value = ""; else console.error("Error: produto-icone not found for clearing.");
         if (prodId) prodId.value = ""; else console.error("Error: produto-id not found for clearing.");
         if (prodNome) prodNome.value = ""; else console.error("Error: produto-nome not found for clearing.");
         if (prodPreco) prodPreco.value = ""; else console.error("Error: produto-preco not found for clearing.");
         if (prodRapido) prodRapido.checked = false; else console.error("Error: produto-acesso-rapido not found for clearing.");
+        if (prodSetor) prodSetor.value = "A&B"; // Define um valor padrão
     }
 
     // Event Listener para o botão "Adicionar Novo Produto"
@@ -299,6 +307,8 @@ document.addEventListener("DOMContentLoaded", () => {
             // Remove pontos de milhar e substitui vírgula decimal por ponto para parseFloat
             const preco = parseFloat(precoInput.replace(/\./g, '').replace(',', '.'));
             const acessoRapido = document.getElementById("produto-acesso-rapido").checked;
+            const setor = document.getElementById("produto-setor").value;
+
 
             if (!id || !nome || isNaN(preco)) {
                 alert("Por favor, preencha todos os campos obrigatórios: ID, Nome e Preço (com um valor numérico válido).");
@@ -309,23 +319,25 @@ document.addEventListener("DOMContentLoaded", () => {
             try {
                 if (editingProductId) {
                     // Modo de edição
-                    console.error("Attempting to update product:", { icone, id: editingProductId, nome, preco, acessoRapido });
+                    console.error("Attempting to update product:", { icone, id: editingProductId, nome, preco, acessoRapido, setor });
                     await db.collection("produtos").doc(editingProductId).update({
                         icone: icone,
                         nome: nome,
                         preco: preco,
-                        acessoRapido: acessoRapido
+                        acessoRapido: acessoRapido,
+                        setor: setor
                     });
                     alert("Produto atualizado com sucesso!");
                     console.error("Product updated successfully.");
                 } else {
                     // Modo de adição
-                    console.error("Attempting to save new product:", { icone, id, nome, preco, acessoRapido });
+                    console.error("Attempting to save new product:", { icone, id, nome, preco, acessoRapido, setor });
                     await db.collection("produtos").doc(id).set({
                         icone: icone,
                         nome: nome,
                         preco: preco,
-                        acessoRapido: acessoRapido
+                        acessoRapido: acessoRapido,
+                        setor: setor
                     });
                     alert("Produto salvo com sucesso!");
                     console.error("Product saved successfully.");
