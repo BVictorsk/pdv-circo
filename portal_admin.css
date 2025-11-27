@@ -1,4 +1,4 @@
-/* --- Estilos para o Painel Admin (abas) --- */
+rea/* --- Estilos para o Painel Admin (abas) --- */
 
 .admin-main {
     padding: 20px;
@@ -70,7 +70,7 @@
     gap: 10px;
     position: relative;
     overflow: hidden; /* Para garantir que o ícone de acesso rápido não vaze */
-    min-height: 180px; /* Aumentado em 20px para melhor visualização */
+    min-height: 200px; /* Aumentado em 20px para melhor visualização */
 }
 
 .produto-card:hover {
