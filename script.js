@@ -234,7 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (window.AndroidInterface && window.AndroidInterface.imprimirCupom) {
                 console.log("Enviando recibo para Android:", recibo);
                 // Convertendo valores numéricos para string formatada para a interface Android, se necessário
-                const finalizarVenda reciboParaAndroid = {
+                const reciboParaAndroid = {
                     ...recibo,
                     total: formatarPreco(recibo.total),
                     itens: recibo.itens.map(item => ({
