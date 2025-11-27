@@ -229,7 +229,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 const today = new Date();
-                const dateString = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
+                const day = today.getDate().toString().padStart(2, '0');
+                const month = (today.getMonth() + 1).toString().padStart(2, '0');
+                const year = today.getFullYear();
+                const dateFormattedForId = `${day}${month}${year}`;
+
+                // Use YYYY-MM-DD for the counter document field, as it's better for sorting/querying
+                const dateStringForCounter = `${year}-${month}-${day}`;
 
                 let vendaId = null;
 
@@ -238,14 +244,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     const counterDoc = await transaction.get(counterRef);
 
                     let currentCount = 0;
-                    if (counterDoc.exists && counterDoc.data()[dateString]) {
-                        currentCount = counterDoc.data()[dateString];
+                    if (counterDoc.exists && counterDoc.data()[dateStringForCounter]) {
+                        currentCount = counterDoc.data()[dateStringForCounter];
                     }
 
                     const newCount = currentCount + 1;
-                    transaction.set(counterRef, { [dateString]: newCount }, { merge: true });
+                    transaction.set(counterRef, { [dateStringForCounter]: newCount }, { merge: true });
 
-                    vendaId = `${loggedInUser}-${newCount}`;
+                    // Construct the vendaId with the desired format: operador-DDMMYYYY-count
+                    vendaId = `${loggedInUser}-${dateFormattedForId}-${newCount}`;
                     const vendaRef = db.collection("vendas").doc(vendaId);
 
                     transaction.set(vendaRef, {

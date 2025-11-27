@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         userDisplay.textContent = loggedInUser;
     }
 
+    // Adicionado log para verificar o objeto db
     if (typeof db === 'undefined' || db === null) {
         console.error("Error: Firestore 'db' object is not defined or null. Ensure firebase-config.js is loaded correctly.");
         if (mensagemNenhumaTransacao) {
@@ -18,6 +19,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             mensagemNenhumaTransacao.style.display = "block";
         }
         return; // Stop execution if db is not defined
+    } else {
+        console.log("Firestore 'db' object is defined.", db);
     }
 
     const formatarPreco = (valor) => `R$ ${valor.toFixed(2).replace('.', ',')}`;
@@ -29,14 +32,52 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function fetchVendasFromFirestore() {
         try {
+            let query = db.collection("vendas");
+
+            // Log the loggedInUser to check its value
+            console.log("Logged in user for transactions:", loggedInUser);
+
+            // Filtra as transações pelo usuário logado
+            if (loggedInUser) {
+                query = query.where("operador", "==", loggedInUser);
+                console.log(`Querying for 'vendas' where 'operador' == '${loggedInUser}'`);
+            } else {
+                console.log("No loggedInUser found in sessionStorage. Fetching all sales (if allowed by rules).");
+            }
+
             // Ordena as vendas pela data mais recente (timestamp decrescente)
-            const snapshot = await db.collection("vendas").orderBy("timestamp", "desc").get();
+            const snapshot = await query.orderBy("timestamp", "desc").get();
+            
+            // Adicionado log para o resultado da consulta
+            if (snapshot.empty) {
+                console.log("Firestore query returned no documents for the logged in user.");
+            } else {
+                console.log("Firestore query returned documents. Count:", snapshot.size);
+                console.log("Fetched sales documents:", snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            }
+
             return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         } catch (error) {
             console.error("Erro ao carregar vendas do Firestore: ", error);
             return [];
         }
     }
+
+    // Funções placeholder para os botões
+    window.gerarSegundaVia = (vendaId) => {
+        console.log(`Gerar 2ª via da venda com ID: ${vendaId}`);
+        // Implementar lógica para gerar a segunda via (ex: abrir um modal com detalhes para impressão)
+    };
+
+    window.editarVenda = (vendaId) => {
+        console.log(`Editar venda com ID: ${vendaId}`);
+        // Implementar lógica para edição (ex: redirecionar para uma página de edição com os dados da venda)
+    };
+
+    window.cancelarVenda = (vendaId) => {
+        console.log(`Cancelar venda com ID: ${vendaId}`);
+        // Implementar lógica para cancelamento (ex: exibir um modal de confirmação, atualizar status no Firestore)
+    };
 
     function renderVendas(vendas) {
         if (!transacoesGrid) return;
@@ -86,6 +127,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                     <h4>Pagamentos:</h4>
                     <ul>${pagamentosHTML}</ul>
+                </div>
+                <div class="card-actions">
+                    <button onclick="gerarSegundaVia('${venda.id}')">2ª Via</button>
+                    <button onclick="editarVenda('${venda.id}')">Editar</button>
+                    <button onclick="cancelarVenda('${venda.id}')">Cancelar</button>
                 </div>
             `;
             transacoesGrid.appendChild(vendaCard);
