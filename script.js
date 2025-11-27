@@ -7,26 +7,55 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('login-form');
 
     if (loginForm) {
-        loginForm.addEventListener('submit', (event) => {
+        loginForm.addEventListener('submit', async (event) => { // Made async to use await
             event.preventDefault();
 
-            const usuario = document.getElementById('usuario').value;
+            const usuarioId = document.getElementById('usuario').value;
             const senha = document.getElementById('senha').value;
             const troco = parseFloat(document.getElementById('troco').value.replace(',', '.'));
 
-            if (usuario === 'demo' && senha === '1234' && !isNaN(troco)) {
-                sessionStorage.setItem('loggedInUser', usuario);
-                sessionStorage.setItem('trocoInicial', troco);
-                window.location.href = 'pdv.html';
-            } else {
-                alert('Credenciais inválidas ou troco inicial inválido. Use "demo" e "1234".');
+            if (isNaN(troco)) {
+                alert('Troco inicial inválido.');
+                return;
+            }
+
+            if (typeof db === 'undefined' || db === null) {
+                console.error("Error: Firestore 'db' object is not defined or null. Ensure firebase-config.js is loaded correctly.");
+                alert("Erro de conexão: Não foi possível acessar o banco de dados. Verifique sua configuração.");
+                return;
+            }
+
+            try {
+                const userDoc = await db.collection("usuarios").doc(usuarioId).get();
+
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    // In a real application, passwords should be hashed and compared securely.
+                    // For this example, we're doing a direct comparison.
+                    if (userData.senha === senha) {
+                        sessionStorage.setItem('loggedInUser', usuarioId);
+                        sessionStorage.setItem('loggedInUserAccessType', userData.tipoAcesso);
+                        sessionStorage.setItem('trocoInicial', troco);
+                        window.location.href = 'pdv.html';
+                    } else {
+                        alert('Senha incorreta.');
+                    }
+                } else {
+                    alert('Usuário não encontrado.');
+                }
+            } catch (error) {
+                console.error("Erro ao autenticar usuário: ", error);
+                alert("Erro ao tentar fazer login. Verifique o console para mais detalhes.");
             }
         });
     }
 
     // --- Lógica da Tela de PDV (pdv.html) ---
 
-    const SENHA_SUPERVISOR = '5678';
+    // SENHA_SUPERVISOR pode ser removida se o controle de acesso for feito por tipoAcesso do Firestore
+    // Por enquanto, vou mantê-la e adicionar uma verificação baseada no tipoAcesso
+    const SENHA_SUPERVISOR = '5678'; // Manter por compatibilidade, mas idealmente substituir por checagem de tipoAcesso
+
     let carrinho = [];
     let valorTotal = 0;
     let valorPago = 0;
@@ -144,7 +173,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (valorRestante > 0 || valorPago === 0 && carrinho.length > 0) {
                 carrinhoResumoDiv.insertAdjacentHTML('beforeend', opcoesPagamentoEBotaoCancelar);
-            } else if (carrinho.length > 0) {
+            }
+            // Only show payment options if there's a remaining value to pay or if it's a new empty cart with items added
+            else if (carrinho.length > 0) {
                 carrinhoResumoDiv.insertAdjacentHTML('beforeend', pagamentosListaHTML);
                 carrinhoResumoDiv.insertAdjacentHTML('beforeend', `<button class="btn-pagamento btn-cancelar" id="btn-cancelar" style="grid-column: span 2;">❌ Cancelar Pedido</button>`);
             }
@@ -373,15 +404,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const processarBrinde = () => {
             const senhaInput = document.getElementById('brinde-senha-input');
             const senhaDigitada = senhaInput.value;
+            const loggedInUserAccessType = sessionStorage.getItem('loggedInUserAccessType');
 
-            if (senhaDigitada === SENHA_SUPERVISOR) {
-                valorPago = valorTotal;
-                pagamentosEfetuados = [{ tipo: 'BRINDE (Cortesia)', valor: valorTotal }];
-                finalizarVenda('BRINDE');
+            // Allow only Admin or A&O to give freebies
+            if (loggedInUserAccessType === 'Admin' || loggedInUserAccessType === 'A&O') {
+                 // In a real application, consider a supervisor password in Firestore for this action.
+                 // For simplicity, we are still using a fixed SENHA_SUPERVISOR.
+                if (senhaDigitada === SENHA_SUPERVISOR) {
+                    valorPago = valorTotal;
+                    pagamentosEfetuados = [{ tipo: 'BRINDE (Cortesia)', valor: valorTotal }];
+                    finalizarVenda('BRINDE');
+                } else {
+                    alert('Senha incorreta para dar brinde.');
+                    senhaInput.value = '';
+                    senhaInput.focus();
+                }
             } else {
-                alert('Senha incorreta.');
+                alert('Você não tem permissão para dar brindes.');
                 senhaInput.value = '';
-                senhaInput.focus();
+                renderizarBotaoBrinde(); // Restore the original button
             }
         };
 

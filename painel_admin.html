@@ -35,10 +35,9 @@
 
         <div id="Produtos" class="tabcontent">
             <h3>Gerenciar Produtos</h3>
-            <button id="btn-adicionar-produto" class="btn-primary">Adicionar Novo Produto</button>
 
-            <div id="form-adicionar-produto" class="form-container">
-                <h4>Adicionar Produto</h4>
+            <div id="form-adicionar-produto" class="form-container" style="display: block;">
+                <h4>Adicionar/Editar Produto</h4>
                 <div class="input-group">
                     <label for="produto-icone">Ícone (Emoji ou URL):</label>
                     <input type="text" id="produto-icone" class="input-field" placeholder="Ex: 🍔, 🍟 ou https://link.icone.png">
@@ -71,7 +70,7 @@
                     </label>
                 </div>
                 <button id="btn-salvar-produto" class="btn-primary form-btn-save">Salvar Produto</button>
-                <button id="btn-cancelar-produto" class="btn-fechar form-btn-cancel">Cancelar</button>
+                <button id="btn-cancelar-produto" class="btn-fechar form-btn-cancel">Limpar Formulário</button>
             </div>
 
             <div id="lista-produtos-existentes" class="list-products-container">
@@ -85,8 +84,42 @@
         </div>
 
         <div id="Usuarios" class="tabcontent">
-            <h3>Usuários</h3>
-            <p>Conteúdo da aba Usuários.</p>
+            <h3>Gerenciar Usuários</h3>
+
+            <div id="form-adicionar-usuario" class="form-container" style="display: block;">
+                <h4>Adicionar/Editar Usuário</h4>
+                <div class="input-group">
+                    <label for="usuario-nome-completo">Nome Completo:</label>
+                    <input type="text" id="usuario-nome-completo" class="input-field" placeholder="Ex: João da Silva">
+                </div>
+                <div class="input-group">
+                    <label for="usuario-id">Usuário (ID único):</label>
+                    <input type="text" id="usuario-id" class="input-field" placeholder="Ex: jao.silva">
+                </div>
+                <div class="input-group">
+                    <label for="usuario-senha">Senha:</label>
+                    <input type="password" id="usuario-senha" class="input-field" placeholder="Ex: SenhaForte123">
+                </div>
+                <div class="input-group">
+                    <label for="usuario-tipo-acesso">Tipo de Acesso:</label>
+                    <select id="usuario-tipo-acesso" class="input-field">
+                        <option value="Admin">Admin</option>
+                        <option value="Operador">Operador</option>
+                        <option value="A&O">A&O</option>
+                    </select>
+                </div>
+                <button id="btn-salvar-usuario" class="btn-primary form-btn-save">Salvar Usuário</button>
+                <button id="btn-cancelar-usuario" class="btn-fechar form-btn-cancel">Limpar Formulário de Usuário</button>
+            </div>
+
+            <div id="lista-usuarios-existentes" class="list-products-container">
+                <h4>Usuários Cadastrados</h4>
+                <p id="mensagem-nenhum-usuario">Nenhum usuário cadastrado ainda.</p>
+                <!-- Usuários serão carregados aqui via JavaScript -->
+                <div id="usuarios-grid" class="admin-products-grid products-grid-spacing">
+                    <!-- Cards de usuários serão inseridos aqui -->
+                </div>
+            </div>
         </div>
 
         <div id="Notas" class="tabcontent">
