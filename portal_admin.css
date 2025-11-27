@@ -1,0 +1,302 @@
+/* --- Estilos para o Painel Admin (abas) --- */
+
+.admin-main {
+    padding: 20px;
+}
+
+.tab {
+    overflow: hidden;
+    background-color: var(--card-dark);
+    border-radius: 12px;
+    margin-bottom: 20px;
+    display: flex; /* Para alinhar os botões de abas */
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.tab button {
+    background-color: inherit;
+    float: left;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    padding: 14px 20px;
+    transition: 0.3s;
+    font-size: 17px;
+    color: var(--text-light);
+    flex-grow: 1; /* Para que os botões preencham o espaço */
+}
+
+.tab button:hover {
+    background-color: var(--input-bg);
+}
+
+.tab button.active {
+    background-color: var(--purple-main);
+    color: var(--text-light);
+    font-weight: 700;
+}
+
+.tabcontent {
+    display: none;
+    padding: 20px;
+    border: 1px solid var(--card-dark);
+    border-radius: 12px;
+    background-color: var(--card-dark);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    min-height: 400px; /* Para dar espaço ao conteúdo */
+}
+
+.tabcontent h3 {
+    color: var(--purple-main);
+    margin-bottom: 15px;
+    border-bottom: 2px solid var(--input-bg);
+    padding-bottom: 10px;
+}
+
+/* New styles for admin product cards */
+.admin-products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.produto-card {
+    background-color: var(--input-bg);
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    position: relative;
+    overflow: hidden; /* Para garantir que o ícone de acesso rápido não vaze */
+    min-height: 180px; /* Aumentado em 20px para melhor visualização */
+}
+
+.produto-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Distribute space between items */
+    gap: 10px;
+    flex-wrap: wrap; /* Allow items to wrap to the next line */
+}
+
+.card-header .icone {
+    font-size: 32px;
+    color: var(--purple-main);
+    flex-shrink: 0; /* Impede que o ícone encolha */
+}
+
+.product-title-group {
+    flex-grow: 1;
+    text-align: left;
+    min-width: 0; /* Allow text to shrink */
+}
+
+.product-title-group .nome {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-light);
+    line-height: 1.2;
+    white-space: nowrap; /* Prevent text from wrapping */
+    overflow: hidden;
+    text-overflow: ellipsis; /* Add ellipsis for overflowed text */
+}
+
+.product-title-group .product-id-display {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.card-buttons {
+    display: flex;
+    gap: 5px;
+    flex-shrink: 0; /* Prevent buttons from shrinking */
+}
+
+.btn-action {
+    background-color: var(--purple-main);
+    color: var(--text-light);
+    border: none;
+    border-radius: 5px;
+    padding: 8px 12px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 35px; /* Tamanho fixo para botões de ícone */
+    height: 35px;
+    font-weight: bold; /* Para os ícones */
+}
+
+.btn-action:hover {
+    background-color: var(--purple-hover);
+}
+
+.btn-action.btn-excluir-produto {
+    background-color: var(--red-error);
+}
+
+.btn-action.btn-excluir-produto:hover {
+    background-color: #c83232;
+}
+
+.card-body {
+    flex-grow: 1; /* Allow card body to take available space */
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: flex-end; /* Push content to the bottom */
+    gap: 5px; /* Space between price and access tag */
+    margin-top: 10px; /* Separates from header */
+}
+
+.acesso-rapido-info {
+    background-color: var(--green-success);
+    color: var(--bg-dark); /* Texto escuro para contraste */
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 4px;
+    display: inline-block; /* Para ocupar apenas o espaço necessário */
+}
+
+.card-body .preco {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--green-success);
+}
+
+/* Estilo para o formulário de adição/edição de produto */
+.form-adicionar-produto {
+    background-color: var(--card-dark);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    margin-bottom: 30px;
+    display: none; /* Escondido por padrão */
+}
+
+.form-adicionar-produto h3 {
+    color: var(--purple-main);
+    margin-bottom: 20px;
+    border-bottom: 2px solid var(--input-bg);
+    padding-bottom: 10px;
+}
+
+.form-adicionar-produto .input-group {
+    margin-bottom: 15px;
+}
+
+.form-adicionar-produto label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+.form-adicionar-produto input[type="text"],
+.form-adicionar-produto input[type="number"] {
+    width: 100%;
+    padding: 10px 15px;
+    background-color: var(--input-bg);
+    border: 1px solid transparent;
+    border-radius: 8px;
+    color: var(--text-light);
+    font-size: 16px;
+    transition: border-color 0.3s;
+}
+
+.form-adicionar-produto input[type="text"]:focus,
+.form-adicionar-produto input[type="number"]:focus {
+    border-color: var(--purple-main);
+    outline: none;
+}
+
+.form-adicionar-produto .checkbox-group {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    gap: 10px;
+}
+
+.form-adicionar-produto .checkbox-group input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--purple-main); /* Cor do checkbox */
+}
+
+.form-adicionar-produto .checkbox-group label {
+    margin-bottom: 0;
+    font-size: 16px;
+}
+
+.form-adicionar-produto .form-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.form-adicionar-produto .btn-primary,
+.form-adicionar-produto .btn-cancel {
+    width: auto;
+    padding: 10px 20px;
+    font-size: 16px;
+}
+
+.form-adicionar-produto .btn-cancel {
+    background-color: var(--red-error);
+}
+
+.form-adicionar-produto .btn-cancel:hover {
+    background-color: #c83232;
+}
+
+/* Botão flutuante para adicionar produto */
+.btn-adicionar-produto-flutuante {
+    background-color: var(--purple-main);
+    color: var(--text-light);
+    border: none;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    font-size: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    cursor: pointer;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    transition: background-color 0.2s, transform 0.2s;
+    z-index: 50; /* Acima de outros elementos */
+}
+
+.btn-adicionar-produto-flutuante:hover {
+    background-color: var(--purple-hover);
+    transform: translateY(-3px);
+}
+
+/* Mensagem de nenhum produto */
+#mensagem-nenhum-produto {
+    color: var(--text-muted);
+    text-align: center;
+    padding: 50px;
+    border: 1px dashed var(--input-bg);
+    border-radius: 8px;
+    margin-top: 30px;
+    font-size: 18px;
+}

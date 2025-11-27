@@ -68,28 +68,30 @@ async function carregarProdutos() {
             // Convertendo o preço para o formato BR para exibição no card
             const precoFormatado = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(produto.preco);
 
-            // Adiciona o ícone de relâmpago se for acesso rápido
-            const acessoRapidoIcon = produto.acessoRapido ? '<span class="acesso-rapido-icon">⚡</span>' : '';
+            // Adiciona o ícone de relâmpago e texto se for acesso rápido
+            const acessoRapidoTag = produto.acessoRapido ? '<div class="acesso-rapido-info">⚡ Acesso Rápido</div>' : '';
 
             card.innerHTML = `
-                <div class="product-header">
+                <div class="card-header">
                     <div class="icone">${produto.icone || '❓'}</div>
-                    ${acessoRapidoIcon}
+                    <div class="product-title-group">
+                        <div class="nome">${produto.nome}</div>
+                        <div class="product-id-display">ID: ${produtoId}</div>
+                    </div>
+                    <div class="card-buttons">
+                        <button class="btn-action btn-editar-produto"
+                                data-id="${produtoId}"
+                                data-icone="${produto.icone || ''}"
+                                data-nome="${produto.nome}"
+                                data-preco="${produto.preco}"
+                                data-acessorapido="${produto.acessoRapido}"
+                                title="Editar Produto">✏️</button>
+                        <button class="btn-action btn-excluir-produto" data-id="${produtoId}" title="Excluir Produto">🗑️</button>
+                    </div>
                 </div>
-                <div class="product-details">
-                    <div class="nome">${produto.nome}</div>
+                <div class="card-body">
+                    ${acessoRapidoTag}
                     <div class="preco">R$ ${precoFormatado}</div>
-                    <div class="product-id-display">ID: ${produtoId}</div>
-                </div>
-                <div class="product-actions">
-                    <button class="btn-secondary btn-editar-produto" 
-                            data-id="${produtoId}" 
-                            data-icone="${produto.icone || ''}" 
-                            data-nome="${produto.nome}" 
-                            data-preco="${produto.preco}" 
-                            data-acessorapido="${produto.acessoRapido}"
-                            >Editar</button>
-                    <button class="btn-fechar btn-excluir-produto" data-id="${produtoId}" >Remover</button>
                 </div>
             `;
             if (produtosGrid) {
@@ -117,7 +119,7 @@ async function carregarProdutos() {
         });
 
     } catch (error) {
-        console.error("Erro ao carregar produtos: ", error); 
+        console.error("Erro ao carregar produtos: ", error);
     }
 }
 
@@ -209,7 +211,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (inputProdutoPreco) {
         inputProdutoPreco.addEventListener('input', formatarPrecoAoDigitar);
     }
-    
+
     function formatarPrecoAoDigitar(event) {
         let input = event.target;
         let val = input.value.replace(/\D/g, ""); // só números
@@ -295,7 +297,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const nome = document.getElementById("produto-nome").value;
             const precoInput = document.getElementById("produto-preco").value;
             // Remove pontos de milhar e substitui vírgula decimal por ponto para parseFloat
-            const preco = parseFloat(precoInput.replace(/\./g, '').replace(',', '.')); 
+            const preco = parseFloat(precoInput.replace(/\./g, '').replace(',', '.'));
             const acessoRapido = document.getElementById("produto-acesso-rapido").checked;
 
             if (!id || !nome || isNaN(preco)) {
