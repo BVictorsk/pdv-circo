@@ -68,11 +68,19 @@ async function carregarProdutos() {
             // Convertendo o preço para o formato BR para exibição no card
             const precoFormatado = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(produto.preco);
 
+            // Adiciona o ícone de relâmpago se for acesso rápido
+            const acessoRapidoIcon = produto.acessoRapido ? '<span class="acesso-rapido-icon">⚡</span>' : '';
+
             card.innerHTML = `
-                <div class="icone">${produto.icone || '❓'}</div>
-                <div class="nome">${produto.nome}</div>
-                <div class="preco">R$ ${precoFormatado}</div> 
-                <div class="product-id-display">ID: ${produtoId}</div>
+                <div class="product-header">
+                    <div class="icone">${produto.icone || '❓'}</div>
+                    ${acessoRapidoIcon}
+                </div>
+                <div class="product-details">
+                    <div class="nome">${produto.nome}</div>
+                    <div class="preco">R$ ${precoFormatado}</div>
+                    <div class="product-id-display">ID: ${produtoId}</div>
+                </div>
                 <div class="product-actions">
                     <button class="btn-secondary btn-editar-produto" 
                             data-id="${produtoId}" 
