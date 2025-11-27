@@ -89,8 +89,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- FUNÇÕES DE LÓGICA CENTRAL ---
 
     if (acessoRapidoGrid) {
-        if (sessionStorage.getItem('loggedInUser')) {
-            userDisplay.textContent = sessionStorage.getItem('loggedInUser');
+        const loggedInUser = sessionStorage.getItem('loggedInUser');
+        if (loggedInUser) {
+            userDisplay.textContent = loggedInUser;
         }
 
         const formatarPreco = (valor) => `R$ ${valor.toFixed(2).replace('.', ',')}`;
@@ -208,104 +209,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        const imprimirRecibo = (vendaId) => {
-            const data = new Date();
-            const dataFormatada = `${data.toLocaleDateString('pt-BR')} ${data.toLocaleTimeString('pt-BR')}`;
-
-            // Montar o objeto recibo para Android e/ou impressão web
-            const recibo = {
-                id: vendaId, // Usar o ID da venda do Firestore
-                total: valorTotal, // Total numérico
-                itens: carrinho.map(item => ({
-                    produto: item.nome,
-                    qtd: item.quantidade,
-                    valor: item.preco // Valor unitário do item
-                })),
-                pagamentos: pagamentosEfetuados.map(p => ({
-                    tipo: p.tipo.toUpperCase(),
-                    valor: p.valor
-                })),
-                troco: trocoNecessario,
-                data: dataFormatada,
-                operador: sessionStorage.getItem('loggedInUser') || 'N/A'
-            };
-
-            // 1. Tentar imprimir via interface Android
-            if (window.AndroidInterface && window.AndroidInterface.imprimirCupom) {
-                console.log("Enviando recibo para Android:", recibo);
-                // Convertendo valores numéricos para string formatada para a interface Android, se necessário
-                const reciboParaAndroid = {
-                    ...recibo,
-                    total: formatarPreco(recibo.total),
-                    itens: recibo.itens.map(item => ({
-                        ...item,
-                        valor: formatarPreco(item.valor * item.qtd) // Valor total do item formatado para impressão
-                    })),
-                    pagamentos: recibo.pagamentos.map(p => ({
-                        ...p,
-                        valor: formatarPreco(p.valor)
-                    })),
-                    troco: formatarPreco(recibo.troco)
-                };
-                window.AndroidInterface.imprimirCupom(JSON.stringify(reciboParaAndroid), "192.168.1.200");
-            } else {
-                // 2. Fallback para impressão via navegador (método existente)
-                console.log("Interface Android não detectada. Imprimindo via navegador.");
-                let itensReciboHTML = recibo.itens.map(item => `
-                    <tr>
-                        <td>${item.qtd}x ${item.produto}</td>
-                        <td>${formatarPreco(item.valor * item.qtd)}</td>
-                    </tr>
-                `).join('');
-
-                let pagamentosReciboHTML = recibo.pagamentos.map(p => `
-                    <p><strong>${p.tipo}:</strong> ${formatarPreco(p.valor)}</p>
-                `).join('');
-
-                const conteudoRecibo = `
-                    <html>
-                    <head>
-                        <title>Recibo</title>
-                        <style>
-                            body { font-family: 'Courier New', monospace; font-size: 10px; color: #000; }
-                            .recibo-container { width: 280px; margin: 0 auto; }
-                            h2 { text-align: center; margin-bottom: 10px; font-size: 14px; }
-                            p { margin: 2px 0; }
-                            table { width: 100%; border-collapse: collapse; margin: 10px 0; }
-                            th, td { text-align: left; padding: 2px; }
-                            .total { font-weight: bold; font-size: 12px; }
-                            hr { border: none; border-top: 1px dashed #000; margin: 5px 0; }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="recibo-container">
-                            <h2>Circus Max PDV</h2>
-                            <p>Data: ${recibo.data}</p>
-                            <p>Operador: ${recibo.operador}</p>
-                            <hr>
-                            <table>
-                                ${itensReciboHTML}
-                            </table>
-                            <hr>
-                            <p class="total">TOTAL: ${formatarPreco(recibo.total)}</p>
-                            ${pagamentosReciboHTML}
-                            ${recibo.troco > 0 ? `<p class="total">TROCO: ${formatarPreco(recibo.troco)}</p>` : ''}
-                            <hr>
-                            <p style="text-align: center;">Obrigado e volte sempre!</p>
-                        </div>
-                    </body>
-                    </html>
-                `;
-
-                const printWindow = window.open('', '_blank');
-                printWindow.document.write(conteudoRecibo);
-                printWindow.document.close();
-                printWindow.focus();
-                printWindow.print();
-                printWindow.close();
-            }
-        };
-
         const finalizarVenda = async (tipoFinalizacao = 'PAGO') => {
             if (carrinho.length === 0) {
                  alert('Adicione itens ao carrinho para finalizar a venda.');
@@ -319,40 +222,52 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // --- LÓGICA FIREBASE PRIMEIRO ---
             try {
-                // 1. Salva a venda no Firestore
-                const docRef = await db.collection("vendas").add({
-                    itens: carrinho,
-                    valorTotal: valorTotal,
-                    valorPago: valorPago,
-                    troco: trocoNecessario,
-                    pagamentos: pagamentosEfetuados,
-                    tipo: tipoFinalizacao,
-                    operador: sessionStorage.getItem('loggedInUser') || 'N/A',
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                if (typeof db === 'undefined' || db === null) {
+                    console.error("Error: Firestore 'db' object is not defined or null. Ensure firebase-config.js is loaded correctly.");
+                    alert("Erro de conexão: Não foi possível acessar o banco de dados. Verifique sua configuração.");
+                    return;
+                }
+
+                const today = new Date();
+                const dateString = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
+
+                let vendaId = null;
+
+                await db.runTransaction(async (transaction) => {
+                    const counterRef = db.collection("daily_counters").doc(loggedInUser);
+                    const counterDoc = await transaction.get(counterRef);
+
+                    let currentCount = 0;
+                    if (counterDoc.exists && counterDoc.data()[dateString]) {
+                        currentCount = counterDoc.data()[dateString];
+                    }
+
+                    const newCount = currentCount + 1;
+                    transaction.set(counterRef, { [dateString]: newCount }, { merge: true });
+
+                    vendaId = `${loggedInUser}-${newCount}`;
+                    const vendaRef = db.collection("vendas").doc(vendaId);
+
+                    transaction.set(vendaRef, {
+                        itens: carrinho,
+                        valorTotal: valorTotal,
+                        valorPago: valorPago,
+                        troco: trocoNecessario,
+                        pagamentos: pagamentosEfetuados,
+                        tipo: tipoFinalizacao,
+                        operador: loggedInUser || 'N/A',
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
                 });
-                console.log("Venda salva com sucesso no Firestore! ID: ", docRef.id);
+                
+                console.log("Venda salva com sucesso no Firestore! ID: ", vendaId);
 
                 // 2. Se salvou, imprime o recibo (passando o ID da venda)
-                imprimirRecibo(docRef.id); // Passa o ID da venda
+                if (vendaId) {
+                    imprimirRecibo(vendaId, carrinho, valorTotal, pagamentosEfetuados, trocoNecessario, formatarPreco, loggedInUser); // Passa o ID da venda e os parâmetros necessários para a função global
+                }
 
-                // 3. Informa o usuário e limpa o estado
-                let troco = trocoNecessario > 0 ? formatarPreco(trocoNecessario) : 'Nenhum';
-                let mensagemTipo = tipoFinalizacao === 'BRINDE' ? 'BRINDE/CORTESIA' : 'PAGO';
-
-                alert(`
-                    Venda Finalizada como ${mensagemTipo}!\n
-
-                    Recibo impresso.\n
-
-                    ------------------------------\n
-
-                    Total da Compra: ${formatarPreco(valorTotal)}\n
-
-                    Valor Registrado: ${formatarPreco(valorPago)}\n
-
-                    ${tipoFinalizacao === 'PAGO' ? 'Troco a ser dado: ' + troco : ''}
-                `);
-
+                // 3. Limpa o estado
                 carrinho = [];
                 valorPago = 0;
                 valorTotal = 0;
