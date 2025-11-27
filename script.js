@@ -73,6 +73,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const themeSwitcher = document.getElementById('btn-theme-switcher');
     const body = document.body;
 
+    // Elementos de busca
+    const buscaProdutoInput = document.getElementById('busca-produto-input');
+    const btnLimparBusca = document.getElementById('btn-limpar-busca');
+
+
     if(themeSwitcher) {
         themeSwitcher.addEventListener('click', () => {
             body.classList.toggle('light-theme');
@@ -210,17 +215,17 @@ document.addEventListener('DOMContentLoaded', () => {
             // Montar o objeto recibo para Android e/ou impressão web
             const recibo = {
                 id: vendaId, // Usar o ID da venda do Firestore
-                total: formatarPreco(valorTotal), // Total formatado
+                total: valorTotal, // Total numérico
                 itens: carrinho.map(item => ({
                     produto: item.nome,
                     qtd: item.quantidade,
-                    valor: formatarPreco(item.preco * item.quantidade) // Valor total do item formatado
+                    valor: item.preco // Valor unitário do item
                 })),
                 pagamentos: pagamentosEfetuados.map(p => ({
                     tipo: p.tipo.toUpperCase(),
-                    valor: formatarPreco(p.valor)
+                    valor: p.valor
                 })),
-                troco: trocoNecessario > 0 ? formatarPreco(trocoNecessario) : formatarPreco(0),
+                troco: trocoNecessario,
                 data: dataFormatada,
                 operador: sessionStorage.getItem('loggedInUser') || 'N/A'
             };
@@ -228,19 +233,33 @@ document.addEventListener('DOMContentLoaded', () => {
             // 1. Tentar imprimir via interface Android
             if (window.AndroidInterface && window.AndroidInterface.imprimirCupom) {
                 console.log("Enviando recibo para Android:", recibo);
-                window.AndroidInterface.imprimirCupom(JSON.stringify(recibo), "192.168.1.100");
+                // Convertendo valores numéricos para string formatada para a interface Android, se necessário
+                const reciboParaAndroid = {
+                    ...recibo,
+                    total: formatarPreco(recibo.total),
+                    itens: recibo.itens.map(item => ({
+                        ...item,
+                        valor: formatarPreco(item.valor * item.qtd) // Valor total do item formatado para impressão
+                    })),
+                    pagamentos: recibo.pagamentos.map(p => ({
+                        ...p,
+                        valor: formatarPreco(p.valor)
+                    })),
+                    troco: formatarPreco(recibo.troco)
+                };
+                window.AndroidInterface.imprimirCupom(JSON.stringify(reciboParaAndroid), "192.168.1.100");
             } else {
                 // 2. Fallback para impressão via navegador (método existente)
                 console.log("Interface Android não detectada. Imprimindo via navegador.");
                 let itensReciboHTML = recibo.itens.map(item => `
                     <tr>
                         <td>${item.qtd}x ${item.produto}</td>
-                        <td>${item.valor}</td>
+                        <td>${formatarPreco(item.valor * item.qtd)}</td>
                     </tr>
                 `).join('');
 
                 let pagamentosReciboHTML = recibo.pagamentos.map(p => `
-                    <p><strong>${p.tipo}:</strong> ${p.valor}</p>
+                    <p><strong>${p.tipo}:</strong> ${formatarPreco(p.valor)}</p>
                 `).join('');
 
                 const conteudoRecibo = `
@@ -268,9 +287,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                 ${itensReciboHTML}
                             </table>
                             <hr>
-                            <p class="total">TOTAL: ${recibo.total}</p>
+                            <p class="total">TOTAL: ${formatarPreco(recibo.total)}</p>
                             ${pagamentosReciboHTML}
-                            ${recibo.troco !== formatarPreco(0) ? `<p class="total">TROCO: ${recibo.troco}</p>` : ''}
+                            ${recibo.troco > 0 ? `<p class="total">TROCO: ${formatarPreco(recibo.troco)}</p>` : ''}
                             <hr>
                             <p style="text-align: center;">Obrigado e volte sempre!</p>
                         </div>
@@ -483,7 +502,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <input type="number"
                                    id="input-${tipo}"
                                    class="input-pagamento-valor"
-                                   placeholder="${formatarPreco(valorSugerido)}"
+                                   placeholder="${formatarPreco(valorSugerido).replace('R$', '')}"
                                    value="${valorSugerido > 0 ? valorSugerido.toFixed(2) : '0.00'}"
                                    min="0"
                                    step="0.01">
@@ -616,13 +635,21 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         // Modificada para usar produtosDoFirestore e nova estrutura de card
-        const renderizarProdutos = () => {
+        const renderizarProdutos = (filtro = '') => {
             if (!acessoRapidoGrid || !outrosProdutosGrid) return;
 
             acessoRapidoGrid.innerHTML = '';
             outrosProdutosGrid.innerHTML = '';
 
-            produtosDoFirestore.forEach(produto => {
+            const termoBusca = filtro.toLowerCase().trim();
+            const produtosFiltrados = produtosDoFirestore.filter(produto => {
+                // Filtra por ID ou nome do produto
+                return produto.id.toLowerCase().includes(termoBusca) ||
+                       produto.nome.toLowerCase().includes(termoBusca);
+            });
+
+
+            produtosFiltrados.forEach(produto => {
                 const card = document.createElement('div');
                 card.classList.add('produto-card'); // Usar a classe geral para styling
                 card.setAttribute('data-id', produto.id);
@@ -655,6 +682,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     outrosProdutosGrid.appendChild(card);
                 }
             });
+
+            // Se não houver filtro, ou o filtro estiver vazio, mostramos uma mensagem para ambos os grids.
+            // Se houver filtro e nenhum resultado, também mostramos a mensagem.
+            if (produtosFiltrados.length === 0 && termoBusca !== '') {
+                outrosProdutosGrid.innerHTML = '<p style="text-align: center; color: var(--text-muted); margin-top: 20px;">Nenhum produto encontrado com este termo.</p>';
+                acessoRapidoGrid.innerHTML = ''; // Limpar o grid de acesso rápido se não houver resultados.
+            } else if (produtosFiltrados.length === 0 && termoBusca === '') {
+                 // Caso não haja produtos cadastrados e o filtro esteja vazio
+                 outrosProdutosGrid.innerHTML = '<p style="text-align: center; color: var(--text-muted); margin-top: 20px;">Nenhum produto cadastrado.</p>';
+                 acessoRapidoGrid.innerHTML = '';
+            }
         };
 
         const adicionarAoCarrinho = (produto) => {
@@ -671,10 +709,30 @@ document.addEventListener('DOMContentLoaded', () => {
             renderizarCarrinho();
         };
 
+        // Adicionar listeners para a busca
+        if (buscaProdutoInput && btnLimparBusca) {
+            buscaProdutoInput.addEventListener('keyup', () => {
+                const termoBusca = buscaProdutoInput.value;
+                renderizarProdutos(termoBusca);
+                if (termoBusca.length > 0) {
+                    btnLimparBusca.style.display = 'inline-block';
+                } else {
+                    btnLimparBusca.style.display = 'none';
+                }
+            });
+
+            btnLimparBusca.addEventListener('click', () => {
+                buscaProdutoInput.value = '';
+                renderizarProdutos('');
+                btnLimparBusca.style.display = 'none';
+            });
+        }
+
+
         // Chamar fetchProductsFromFirestore antes de renderizar produtos
         async function inicializarPDV() {
             produtosDoFirestore = await fetchProductsFromFirestore();
-            renderizarProdutos();
+            renderizarProdutos(); // Renderiza todos os produtos inicialmente
             renderizarCarrinho();
             renderizarBotaoBrinde();
         }

@@ -70,6 +70,18 @@
             color: white;
             border: none;
         }
+
+        /* Estilos para o campo de busca e botão de limpar */
+        .busca-input-container {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .busca-input-container .input-field {
+            flex-grow: 1;
+        }
+
     </style>
 </head>
 <body>
@@ -98,20 +110,25 @@
                             🎁 Dar Brinde (Cortesia)
                         </button>
                     </div>
-                    </div>
-                <input type="text" class="busca-input" placeholder="Buscar por nome ou código (Ex: H01)">
+                </div>
+            </div>
+
+            <!-- NOVO CAMPO DE BUSCA -->
+            <div class="busca-input-container">
+                <input type="text" id="busca-produto-input" placeholder="Buscar produto por ID ou Nome..." class="input-field">
+                <button id="btn-limpar-busca" class="btn-controle" style="display: none;">X</button>
             </div>
             
             <div class="produtos-secao">
                 <h3>⚡️ Acesso Rápido</h3>
                 <div class="produtos-grid" id="acesso-rapido-grid">
-                    </div>
+                </div>
             </div>
 
             <div class="produtos-secao">
                 <h3>🎈 Outros Produtos</h3>
                 <div class="produtos-grid" id="outros-produtos-grid">
-                    </div>
+                </div>
             </div>
 
         </section>
@@ -120,7 +137,7 @@
             <h2 class="carrinho-titulo">Pedido Atual</h2>
             
             <div class="carrinho-conteudo" id="carrinho-lista">
-                </div>
+            </div>
             
             <div class="carrinho-resumo">
                 <div class="carrinho-total">
@@ -129,7 +146,7 @@
                 </div>
                 
                 <p class="carrinho-pagamento">Pagamento:</p>
-                <div class="opcoes-pagamento">
+                <div class="opcoes-pagamento" id="opcoes-pagamento">
                     <button class="btn-pagamento btn-pix" data-tipo="pix">
                         💳 PIX
                     </button>
