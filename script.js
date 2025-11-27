@@ -1,15 +1,7 @@
-
 // --- Lógica Completa e Corrigida (script.js) ---
 
-// Certifique-se de que o objeto 'db' do Firestore seja inicializado AQUI
-// Se 'firebase' ainda não estiver disponível, pode haver um problema com a ordem de carregamento dos scripts.
-// Este bloco garante que 'db' esteja disponível para este script.
-let db;
-if (typeof firebase !== 'undefined') {
-    db = firebase.firestore();
-} else {
-    console.error("Firebase is not initialized. Ensure firebase-app-compat.js is loaded before this script.");
-}
+// Removida a declaração de 'db' daqui para evitar duplicação.
+// 'db' agora é inicializado em firebase-config.js e é acessível globalmente.
 
 document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('login-form');
@@ -71,8 +63,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Nova função para buscar produtos do Firestore
         async function fetchProductsFromFirestore() {
+            // A verificação de 'db' agora é importante aqui, pois não estamos declarando-o localmente.
             if (typeof db === 'undefined' || db === null) {
-                console.error("Error: Firestore 'db' object is not defined or null. Check firebase-config.js and script loading order.");
+                console.error("Error: Firestore 'db' object is not defined or null. Ensure firebase-config.js is loaded correctly.");
                 return [];
             }
             try {
@@ -179,62 +172,88 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        const imprimirRecibo = () => {
+        const imprimirRecibo = (vendaId) => {
             const data = new Date();
             const dataFormatada = `${data.toLocaleDateString('pt-BR')} ${data.toLocaleTimeString('pt-BR')}`;
 
-            let itensRecibo = carrinho.map(item => `
-                <tr>
-                    <td>${item.quantidade}x ${item.nome}</td>
-                    <td>${formatarPreco(item.preco * item.quantidade)}</td>
-                </tr>
-            `).join('');
+            // Montar o objeto recibo para Android e/ou impressão web
+            const recibo = {
+                id: vendaId, // Usar o ID da venda do Firestore
+                total: formatarPreco(valorTotal), // Total formatado
+                itens: carrinho.map(item => ({
+                    produto: item.nome,
+                    qtd: item.quantidade,
+                    valor: formatarPreco(item.preco * item.quantidade) // Valor total do item formatado
+                })),
+                pagamentos: pagamentosEfetuados.map(p => ({
+                    tipo: p.tipo.toUpperCase(),
+                    valor: formatarPreco(p.valor)
+                })),
+                troco: trocoNecessario > 0 ? formatarPreco(trocoNecessario) : formatarPreco(0),
+                data: dataFormatada,
+                operador: sessionStorage.getItem('loggedInUser') || 'N/A'
+            };
 
-            let pagamentosRecibo = pagamentosEfetuados.map(p => `
-                <p><strong>${p.tipo.toUpperCase()}:</strong> ${formatarPreco(p.valor)}</p>
-            `).join('');
+            // 1. Tentar imprimir via interface Android
+            if (window.AndroidInterface && window.AndroidInterface.imprimirCupom) {
+                console.log("Enviando recibo para Android:", recibo);
+                window.AndroidInterface.imprimirCupom(JSON.stringify(recibo), "192.168.0.201");
+            } else {
+                // 2. Fallback para impressão via navegador (método existente)
+                console.log("Interface Android não detectada. Imprimindo via navegador.");
+                let itensReciboHTML = recibo.itens.map(item => `
+                    <tr>
+                        <td>${item.qtd}x ${item.produto}</td>
+                        <td>${item.valor}</td>
+                    </tr>
+                `).join('');
 
-            const conteudoRecibo = `
-                <html>
-                <head>
-                    <title>Recibo</title>
-                    <style>
-                        body { font-family: 'Courier New', monospace; font-size: 10px; color: #000; }
-                        .recibo-container { width: 280px; margin: 0 auto; }
-                        h2 { text-align: center; margin-bottom: 10px; font-size: 14px; }
-                        p { margin: 2px 0; }
-                        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
-                        th, td { text-align: left; padding: 2px; }
-                        .total { font-weight: bold; font-size: 12px; }
-                        hr { border: none; border-top: 1px dashed #000; margin: 5px 0; }
-                    </style>
-                </head>
-                <body>
-                    <div class="recibo-container">
-                        <h2>Circus Max PDV</h2>
-                        <p>Data: ${dataFormatada}</p>
-                        <p>Operador: ${sessionStorage.getItem('loggedInUser') || 'N/A'}</p>
-                        <hr>
-                        <table>
-                            ${itensRecibo}
-                        </table>
-                        <hr>
-                        <p class="total">TOTAL: ${formatarPreco(valorTotal)}</p>
-                        ${pagamentosRecibo}
-                        ${trocoNecessario > 0 ? `<p class="total">TROCO: ${formatarPreco(trocoNecessario)}</p>` : ''}
-                        <hr>
-                        <p style="text-align: center;">Obrigado e volte sempre!</p>
-                    </div>
-                </body>
-                </html>
-            `;
+                let pagamentosReciboHTML = recibo.pagamentos.map(p => `
+                    <p><strong>${p.tipo}:</strong> ${p.valor}</p>
+                `).join('');
 
-            const printWindow = window.open('', '_blank');
-            printWindow.document.write(conteudoRecibo);
-            printWindow.document.close();
-            printWindow.focus();
-            printWindow.print();
-            printWindow.close();
+                const conteudoRecibo = `
+                    <html>
+                    <head>
+                        <title>Recibo</title>
+                        <style>
+                            body { font-family: 'Courier New', monospace; font-size: 10px; color: #000; }
+                            .recibo-container { width: 280px; margin: 0 auto; }
+                            h2 { text-align: center; margin-bottom: 10px; font-size: 14px; }
+                            p { margin: 2px 0; }
+                            table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+                            th, td { text-align: left; padding: 2px; }
+                            .total { font-weight: bold; font-size: 12px; }
+                            hr { border: none; border-top: 1px dashed #000; margin: 5px 0; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="recibo-container">
+                            <h2>Circus Max PDV</h2>
+                            <p>Data: ${recibo.data}</p>
+                            <p>Operador: ${recibo.operador}</p>
+                            <hr>
+                            <table>
+                                ${itensReciboHTML}
+                            </table>
+                            <hr>
+                            <p class="total">TOTAL: ${recibo.total}</p>
+                            ${pagamentosReciboHTML}
+                            ${recibo.troco !== formatarPreco(0) ? `<p class="total">TROCO: ${recibo.troco}</p>` : ''}
+                            <hr>
+                            <p style="text-align: center;">Obrigado e volte sempre!</p>
+                        </div>
+                    </body>
+                    </html>
+                `;
+
+                const printWindow = window.open('', '_blank');
+                printWindow.document.write(conteudoRecibo);
+                printWindow.document.close();
+                printWindow.focus();
+                printWindow.print();
+                printWindow.close();
+            }
         };
 
         const finalizarVenda = async (tipoFinalizacao = 'PAGO') => {
@@ -251,7 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // --- LÓGICA FIREBASE PRIMEIRO ---
             try {
                 // 1. Salva a venda no Firestore
-                await db.collection("vendas").add({
+                const docRef = await db.collection("vendas").add({
                     itens: carrinho,
                     valorTotal: valorTotal,
                     valorPago: valorPago,
@@ -261,10 +280,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     operador: sessionStorage.getItem('loggedInUser') || 'N/A',
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                console.log("Venda salva com sucesso no Firestore!");
+                console.log("Venda salva com sucesso no Firestore! ID: ", docRef.id);
 
-                // 2. Se salvou, imprime o recibo
-                imprimirRecibo();
+                // 2. Se salvou, imprime o recibo (passando o ID da venda)
+                imprimirRecibo(docRef.id); // Passa o ID da venda
 
                 // 3. Informa o usuário e limpa o estado
                 let troco = trocoNecessario > 0 ? formatarPreco(trocoNecessario) : 'Nenhum';
@@ -568,7 +587,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 card.setAttribute('data-id', produto.id);
 
                 const precoFormatado = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(produto.preco);
-                const acessoRapidoTag = produto.acessoRapido ? '<div class="acesso-rapido-info">⚡ Acesso Rápido</div>' : '';
+                const acessoRapidoTag = produto.acessoRapido ? '<div class="acesso-rapido-info">⚡</div>' : '';
 
                 card.innerHTML = `
                     <div class="card-header">

@@ -286,11 +286,11 @@ body {
 .produto-card {
     background-color: var(--input-bg);
     border-radius: 8px;
-    padding: 15px;
+    padding: 10px;
     text-align: center;
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;
-    height: 120px;
+    min-height: 150px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;

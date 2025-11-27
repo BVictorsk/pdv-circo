@@ -63,14 +63,14 @@ rea/* --- Estilos para o Painel Admin (abas) --- */
 .produto-card {
     background-color: var(--input-bg);
     border-radius: 8px;
-    padding: 15px;
+    padding: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     display: flex;
     flex-direction: column;
     gap: 10px;
     position: relative;
     overflow: hidden; /* Para garantir que o ícone de acesso rápido não vaze */
-    min-height: 200px; /* Aumentado em 20px para melhor visualização */
+    min-height: 250px;
 }
 
 .produto-card:hover {
@@ -109,7 +109,7 @@ rea/* --- Estilos para o Painel Admin (abas) --- */
 }
 
 .product-title-group .product-id-display {
-    font-size: 12px;
+    font-size: 10px;
     color: var(--text-muted);
     margin-top: 2px;
     white-space: nowrap;
