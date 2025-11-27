@@ -41,7 +41,9 @@ function imprimirRecibo(vendaId, carrinho, valorTotal, pagamentosEfetuados, troc
         dadosParaImpressao += `TROCO: ${formatarPreco(recibo.troco)}\n`;
     }
     dadosParaImpressao += `------------------------------\n`;
-    dadosParaImpressao += `Obrigado e volte sempre!\n\n\n\n\n  <cut>\n`; // Comando de corte
+    dadosParaImpressao += `Obrigado e volte sempre!\n\n\n\n\n`;
+    // Adiciona sequência de corte ESC/POS (GS V A n)
+    dadosParaImpressao += '\x1D\x56\x41\x00';
 
     // Helpers: converter texto para ESC/POS (Base64) para impressoras térmicas
     function uint8ToBase64(u8) {
@@ -77,34 +79,34 @@ function imprimirRecibo(vendaId, carrinho, valorTotal, pagamentosEfetuados, troc
     }
 
     // 1. Tentar imprimir via interface AndroidPrint (mini app)
+    if (window.AndroidPrint && typeof window.AndroidPrint.print === 'function') {
+        console.log('AndroidPrint.print detectado. Enviando dados para impressão.');
+        try {
+            window.AndroidPrint.print(dadosParaImpressao);
+            return;
+        } catch (e) {
+            console.error('Erro ao chamar AndroidPrint.print:', e);
+        }
+    }
+
+    // Se AndroidPrint existir, mas não tiver método print, tentamos outros métodos conhecidos como fallback
     if (window.AndroidPrint) {
-        console.log('AndroidPrint detectado. Tentando múltiplos métodos de envio...');
-        // Preferir método que aceite Base64/raw bytes
+        console.log('AndroidPrint detectado sem método print; tentando fallbacks. Chaves disponíveis:', Object.keys(window.AndroidPrint));
         if (typeof window.AndroidPrint.printBase64 === 'function') {
             const b64 = escposBase64ForText(dadosParaImpressao);
             if (b64) {
-                console.log('Enviando Base64 ESC/POS para AndroidPrint.printBase64');
                 try { window.AndroidPrint.printBase64(b64); return; } catch (e) { console.error(e); }
             }
         }
-        // Métodos de texto conhecidos
-        if (typeof window.AndroidPrint.print === 'function') {
-            console.log('Enviando texto para AndroidPrint.print');
-            try { window.AndroidPrint.print(dadosParaImpressao); return; } catch (e) { console.error(e); }
-        }
         if (typeof window.AndroidPrint.printText === 'function') {
-            console.log('Enviando texto para AndroidPrint.printText');
             try { window.AndroidPrint.printText(dadosParaImpressao); return; } catch (e) { console.error(e); }
         }
-        // Se houver um método genérico para envio de bytes
         if (typeof window.AndroidPrint.sendBytes === 'function') {
             const b64 = escposBase64ForText(dadosParaImpressao);
             if (b64) {
-                console.log('Enviando Base64 para AndroidPrint.sendBytes');
                 try { window.AndroidPrint.sendBytes(b64); return; } catch (e) { console.error(e); }
             }
         }
-        console.warn('AndroidPrint presente, mas nenhum método conhecido funcionou. Chaves disponíveis:', Object.keys(window.AndroidPrint));
     }
 
     // 2. Fallback para a interface AndroidInterface (antiga, se existir)
