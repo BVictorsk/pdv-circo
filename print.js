@@ -24,7 +24,7 @@ function imprimirRecibo(vendaId, carrinho, valorTotal, pagamentosEfetuados, troc
     };
 
     // Constrói o texto de impressão em formato simples
-    let dadosParaImpressao = `CIRCUS MAX PDV\n`;
+    let dadosParaImpressao = `PATATI PATATA PDV\n`;
     dadosParaImpressao += `Data: ${recibo.data}\n`;
     dadosParaImpressao += `Operador: ${recibo.operador}\n`;
     dadosParaImpressao += `------------------------------\n`;
@@ -96,7 +96,7 @@ function imprimirRecibo(vendaId, carrinho, valorTotal, pagamentosEfetuados, troc
                 </head>
                 <body>
                     <div class="recibo-container">
-                        <h2>Circus Max PDV</h2>
+                        <h2>Patati Patata PDV</h2>
                         <p>Data: ${recibo.data}</p>
                         <p>Operador: ${recibo.operador}</p>
                         <hr>
