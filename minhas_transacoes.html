@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minhas Transações - Circus Max PDV</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="portal_admin.css"> <!-- Reutilizando estilos existentes, se aplicável -->
+</head>
+<body>
+    <header class="pdv-header">
+        <div class="pdv-header-left">
+            Circus Max PDV - Minhas Transações
+        </div>
+        <div class="pdv-header-right">
+            <span style="color: var(--text-muted); font-size: 14px;">Logado como: <strong id="user-display">demo</strong></span>
+            <a href="pdv.html" class="btn-header">Voltar ao PDV</a>
+            <button class="btn-header btn-fechar" onclick="location.href='index.html'">
+                ❌ Sair
+            </button>
+        </div>
+    </header>
+
+    <main class="admin-main">
+        <div class="tabcontent" style="display: block;">
+            <h3>Minhas Vendas Realizadas</h3>
+            <p id="mensagem-nenhuma-transacao">Nenhuma transação encontrada para este usuário.</p>
+            <div id="transacoes-grid" class="admin-products-grid products-grid-spacing">
+                <!-- Transações serão carregadas aqui via JavaScript -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="minhas_transacoes.js"></script>
+</body>
+</html>
