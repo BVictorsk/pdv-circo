@@ -5,6 +5,72 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Circus Max PDV - Venda Rápida</title>
     <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Estilos básicos para o modal */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%; /* Could be more specific */
+            max-width: 500px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            position: relative;
+        }
+        .close-button {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .modal .input-group {
+            margin-bottom: 15px;
+        }
+        .modal .input-field {
+            width: calc(100% - 22px); /* Adjust for padding and border */
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .modal .btn-primary, .modal .btn-fechar {
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            margin-right: 10px;
+        }
+        .modal .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+        }
+        .modal .btn-fechar {
+            background-color: #f44336;
+            color: white;
+            border: none;
+        }
+    </style>
 </head>
 <body>
     <header class="pdv-header">
@@ -15,6 +81,7 @@
             <span style="color: var(--text-muted); font-size: 14px;">Logado como: <strong id="user-display">demo</strong></span>
             <a href="painel_admin.html">Painel Admin</a>
             <a href="#">Fechamento</a>
+            <button id="btn-config-printer" class="btn-header">⚙️ Configurações</button>
             <button id="btn-theme-switcher" class="btn-header">Mudar para Tema Claro</button>
             <button class="btn-header btn-fechar" onclick="location.href='index.html'">
                 ❌ Sair
@@ -82,6 +149,20 @@
             </div>
         </section>
     </main>
+
+    <!-- Modal de Configurações da Impressora -->
+    <div id="printerConfigModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h3>Configurações da Impressora</h3>
+            <div class="input-group">
+                <label for="modal-printer-ip">Endereço IP da Impressora:</label>
+                <input type="text" id="modal-printer-ip" class="input-field" placeholder="Ex: 192.168.1.100">
+            </div>
+            <button id="btn-save-printer-ip" class="btn-primary">Salvar IP</button>
+            <button id="btn-close-modal" class="btn-fechar">Fechar</button>
+        </div>
+    </div>
 
     <!-- Firebase SDKs - Adicionados para integração -->
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
