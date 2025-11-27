@@ -37,7 +37,7 @@
             <h3>Gerenciar Produtos</h3>
             <button id="btn-adicionar-produto" class="btn-primary">Adicionar Novo Produto</button>
 
-            <div id="form-adicionar-produto" class="form-container" style="display:none; margin-top: 20px; padding: 20px; background-color: var(--input-bg); border-radius: 8px;">
+            <div id="form-adicionar-produto" class="form-container">
                 <h4>Adicionar Produto</h4>
                 <div class="input-group">
                     <label for="produto-icone">Ícone (Emoji ou URL):</label>
@@ -52,24 +52,20 @@
                     <input type="text" id="produto-nome" class="input-field" placeholder="Ex: Hambúrguer Clássico">
                 </div>
                 <div class="input-group">
-                    <label for="produto-preco">Preço:</label>
-                    <input type="text" id="produto-preco" class="input-field" placeholder="Ex: 25.50">
-                </div>
-                <div class="input-group">
-                    <label style="display:flex; align-items:center; gap: 10px;">
-                        <input type="checkbox" id="produto-acesso-rapido" style="width: auto;">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="produto-acesso-rapido">
                         Acesso Rápido (exibir no PDV principal)
                     </label>
                 </div>
-                <button id="btn-salvar-produto" class="btn-primary" style="width: auto; padding: 10px 20px; margin-right: 10px; margin-top: 15px;">Salvar Produto</button>
-                <button id="btn-cancelar-produto" class="btn-fechar" style="width: auto; padding: 10px 20px; margin-top: 15px;">Cancelar</button>
+                <button id="btn-salvar-produto" class="btn-primary form-btn-save">Salvar Produto</button>
+                <button id="btn-cancelar-produto" class="btn-fechar form-btn-cancel">Cancelar</button>
             </div>
 
-            <div id="lista-produtos-existentes" style="margin-top: 30px;">
+            <div id="lista-produtos-existentes" class="list-products-container">
                 <h4>Produtos Cadastrados</h4>
-                <p id="mensagem-nenhum-produto" style="color: var(--text-muted); text-align: center; padding: 20px; border: 1px dashed var(--input-bg); border-radius: 8px; margin-top: 15px;">Nenhum produto cadastrado ainda. Adicione um novo produto!</p>
+                <p id="mensagem-nenhum-produto">Nenhum produto cadastrado ainda. Adicione um novo produto!</p>
                 <!-- Produtos serão carregados aqui via JavaScript -->
-                <div id="produtos-grid" class="admin-products-grid" style="margin-top: 15px;">
+                <div id="produtos-grid" class="admin-products-grid products-grid-spacing">
                     <!-- Cards de produtos serão inseridos aqui -->
                 </div>
             </div>

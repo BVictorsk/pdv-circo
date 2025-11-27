@@ -1,6 +1,16 @@
 
 // --- Lógica Completa e Corrigida (script.js) ---
 
+// Certifique-se de que o objeto 'db' do Firestore seja inicializado AQUI
+// Se 'firebase' ainda não estiver disponível, pode haver um problema com a ordem de carregamento dos scripts.
+// Este bloco garante que 'db' esteja disponível para este script.
+let db;
+if (typeof firebase !== 'undefined') {
+    db = firebase.firestore();
+} else {
+    console.error("Firebase is not initialized. Ensure firebase-app-compat.js is loaded before this script.");
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('login-form');
 
@@ -23,25 +33,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Lógica da Tela de PDV (pdv.html) ---
-    
-    const produtos = [
-        { id: 'H01', nome: 'Hot Dog', preco: 15.00, icone: '🌭', rapido: true },
-        { id: 'P01', nome: 'Pipoca Doce', preco: 12.00, icone: '🍿', rapido: true },
-        { id: 'A01', nome: 'Água', preco: 5.00, icone: '💧', rapido: true },
-        { id: 'R01', nome: 'Refrigerante', preco: 8.00, icone: '🥤', rapido: true },
-        { id: 'P02', nome: 'Pipoca Salgada', preco: 10.00, icone: '🍿', rapido: false },
-        { id: 'C01', nome: 'Algodão Doce', preco: 7.00, icone: '🍭', rapido: false },
-        { id: 'B01', nome: 'Brinquedo (Lojinha)', preco: 45.00, icone: '🎈', rapido: false },
-        { id: 'F01', nome: 'Foto Porta-Retrato', preco: 60.00, icone: '🖼️', rapido: false },
-    ];
 
-    const SENHA_SUPERVISOR = '5678'; 
-    let carrinho = []; 
+    const SENHA_SUPERVISOR = '5678';
+    let carrinho = [];
     let valorTotal = 0;
     let valorPago = 0;
     let valorRestante = 0;
     let trocoNecessario = 0;
-    let pagamentosEfetuados = []; 
+    let pagamentosEfetuados = [];
+    let produtosDoFirestore = []; // Nova variável para armazenar produtos do Firestore
 
     const acessoRapidoGrid = document.getElementById('acesso-rapido-grid');
     const outrosProdutosGrid = document.getElementById('outros-produtos-grid');
@@ -61,28 +61,43 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- FUNÇÕES DE LÓGICA CENTRAL ---
-    
+
     if (acessoRapidoGrid) {
         if (sessionStorage.getItem('loggedInUser')) {
             userDisplay.textContent = sessionStorage.getItem('loggedInUser');
-        } 
+        }
 
         const formatarPreco = (valor) => `R$ ${valor.toFixed(2).replace('.', ',')}`;
+
+        // Nova função para buscar produtos do Firestore
+        async function fetchProductsFromFirestore() {
+            if (typeof db === 'undefined' || db === null) {
+                console.error("Error: Firestore 'db' object is not defined or null. Check firebase-config.js and script loading order.");
+                return [];
+            }
+            try {
+                const snapshot = await db.collection("produtos").get();
+                return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            } catch (error) {
+                console.error("Erro ao carregar produtos do Firestore: ", error);
+                return [];
+            }
+        }
 
         const calcularTotalEAtualizarResumo = () => {
             valorTotal = carrinho.reduce((acc, item) => acc + (item.preco * item.quantidade), 0);
             valorRestante = valorTotal - valorPago;
 
             let resumoHTML = '';
-            
-            let pagamentosListaHTML = pagamentosEfetuados.length > 0 ? 
-                '<ul class="pagamentos-lista">' + pagamentosEfetuados.map(p => 
+
+            let pagamentosListaHTML = pagamentosEfetuados.length > 0 ?
+                '<ul class="pagamentos-lista">' + pagamentosEfetuados.map(p =>
                     `<li class="pagamento-item">${p.tipo.toUpperCase()}: ${formatarPreco(p.valor)}</li>`
-                ).join('') + '</ul>' 
+                ).join('') + '</ul>'
                 : '';
 
             const pagamentoHeader = carrinho.length > 0 ? '<p class="carrinho-pagamento">Pagamento:</p>' : '';
-            
+
             const opcoesPagamentoEBotaoCancelar = `
                 ${pagamentosListaHTML}
                 <div class="opcoes-pagamento" id="opcoes-pagamento">
@@ -133,14 +148,14 @@ document.addEventListener('DOMContentLoaded', () => {
             carrinhoResumoDiv.innerHTML = '';
             carrinhoResumoDiv.appendChild(resultadoContainer);
             carrinhoResumoDiv.insertAdjacentHTML('beforeend', pagamentoHeader);
-            
+
             if (valorRestante > 0 || valorPago === 0 && carrinho.length > 0) {
                 carrinhoResumoDiv.insertAdjacentHTML('beforeend', opcoesPagamentoEBotaoCancelar);
             } else if (carrinho.length > 0) {
                 carrinhoResumoDiv.insertAdjacentHTML('beforeend', pagamentosListaHTML);
                 carrinhoResumoDiv.insertAdjacentHTML('beforeend', `<button class="btn-pagamento btn-cancelar" id="btn-cancelar" style="grid-column: span 2;">❌ Cancelar Pedido</button>`);
             }
-            
+
             if (valorRestante > 0 || valorPago === 0 && carrinho.length > 0) {
                 renderizarOpcoesPagamento();
             }
@@ -167,7 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const imprimirRecibo = () => {
             const data = new Date();
             const dataFormatada = `${data.toLocaleDateString('pt-BR')} ${data.toLocaleTimeString('pt-BR')}`;
-            
+
             let itensRecibo = carrinho.map(item => `
                 <tr>
                     <td>${item.quantidade}x ${item.nome}</td>
@@ -213,7 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </body>
                 </html>
             `;
-            
+
             const printWindow = window.open('', '_blank');
             printWindow.document.write(conteudoRecibo);
             printWindow.document.close();
@@ -249,18 +264,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log("Venda salva com sucesso no Firestore!");
 
                 // 2. Se salvou, imprime o recibo
-                imprimirRecibo(); 
+                imprimirRecibo();
 
                 // 3. Informa o usuário e limpa o estado
                 let troco = trocoNecessario > 0 ? formatarPreco(trocoNecessario) : 'Nenhum';
                 let mensagemTipo = tipoFinalizacao === 'BRINDE' ? 'BRINDE/CORTESIA' : 'PAGO';
-                
+
                 alert(`
                     Venda Finalizada como ${mensagemTipo}!\n
+
                     Recibo impresso.\n
+
                     ------------------------------\n
+
                     Total da Compra: ${formatarPreco(valorTotal)}\n
+
                     Valor Registrado: ${formatarPreco(valorPago)}\n
+
                     ${tipoFinalizacao === 'PAGO' ? 'Troco a ser dado: ' + troco : ''}
                 `);
 
@@ -268,7 +288,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 valorPago = 0;
                 valorTotal = 0;
                 trocoNecessario = 0;
-                pagamentosEfetuados = []; 
+                pagamentosEfetuados = [];
                 renderizarCarrinho();
                 renderizarBotaoBrinde();
 
@@ -283,18 +303,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const cancelarPedido = () => {
             if (carrinho.length > 0) {
                 if (confirm('Tem certeza que deseja cancelar o pedido atual?')) {
-                    carrinho = []; 
+                    carrinho = [];
                     valorPago = 0;
                     valorTotal = 0;
                     trocoNecessario = 0;
-                    pagamentosEfetuados = []; 
+                    pagamentosEfetuados = [];
                     renderizarCarrinho();
                 }
             } else {
                 alert('O carrinho já está vazio.');
             }
         };
-        
+
         const renderizarBotaoBrinde = () => {
              brindeContainer.innerHTML = `
                 <button class="btn-brinde" id="btn-dar-brinde">
@@ -309,36 +329,36 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('Adicione itens ao carrinho para dar um brinde.');
                 return;
             }
-            
+
             brindeContainer.innerHTML = `
                 <div style="display: flex; gap: 5px; align-items: center; background-color: var(--blue-info); padding: 5px; border-radius: 8px;">
-                    <input type="password" 
-                           id="brinde-senha-input" 
-                           class="input-field" 
-                           placeholder="Senha Supervisor" 
+                    <input type="password"
+                           id="brinde-senha-input"
+                           class="input-field"
+                           placeholder="Senha Supervisor"
                            style="flex-grow: 1; padding: 8px; font-size: 14px; border: none;">
                     <button id="btn-confirmar-brinde" class="btn-primary" style="padding: 8px 12px;">
                         🔑 OK
-                    </button
+                    </button>
                     <button id="btn-cancelar-brinde" class="btn-controle btn-cancelar-item" style="padding: 4px; width: 20px; height: 20px; font-size: 14px;">
                         &times;
                     </button>
                 </div>
             `;
-            
+
             document.getElementById('btn-confirmar-brinde').addEventListener('click', processarBrinde);
             document.getElementById('btn-cancelar-brinde').addEventListener('click', renderizarBotaoBrinde);
             document.getElementById('brinde-senha-input').focus();
         };
-        
+
         const processarBrinde = () => {
             const senhaInput = document.getElementById('brinde-senha-input');
             const senhaDigitada = senhaInput.value;
 
             if (senhaDigitada === SENHA_SUPERVISOR) {
-                valorPago = valorTotal; 
+                valorPago = valorTotal;
                 pagamentosEfetuados = [{ tipo: 'BRINDE (Cortesia)', valor: valorTotal }];
-                finalizarVenda('BRINDE'); 
+                finalizarVenda('BRINDE');
             } else {
                 alert('Senha incorreta.');
                 senhaInput.value = '';
@@ -348,19 +368,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const processarPagamento = (tipo, valor) => {
             if (valorTotal === 0) return;
-            
+
             pagamentosEfetuados.push({ tipo: tipo, valor: valor });
             valorPago += valor;
-            
-            renderizarOpcoesPagamento(); 
+
+            renderizarOpcoesPagamento();
             calcularTotalEAtualizarResumo();
         };
 
         const renderizarBotaoPagamento = (tipo) => {
              const classes = {
                 'pix': 'btn-pix',
-                'debito': 'btn-debito', 
-                'credito': 'btn-credito', 
+                'debito': 'btn-debito',
+                'credito': 'btn-credito',
                 'dinheiro': 'btn-dinheiro'
             };
             const icones = {
@@ -369,14 +389,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 'credito': '💳 Crédito',
                 'dinheiro': '💵 Dinheiro'
             };
-            
+
             return `
                 <button class="btn-pagamento ${classes[tipo]}" data-tipo="${tipo}">
                     ${icones[tipo]}
                 </button>
             `;
         }
-        
+
         const renderizarOpcoesPagamento = (inputAtivo = null) => {
             const opcoesContainer = document.getElementById('opcoes-pagamento');
             if (!opcoesContainer) return;
@@ -400,9 +420,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (tipo === inputAtivo) {
                     return `
                         <div class="input-pagamento-container" data-tipo="${tipo}">
-                            <input type="number" 
+                            <input type="number"
                                    id="input-${tipo}"
-                                   class="input-pagamento-valor" 
+                                   class="input-pagamento-valor"
                                    placeholder="${formatarPreco(valorSugerido)}"
                                    value="${valorSugerido > 0 ? valorSugerido.toFixed(2) : '0.00'}"
                                    min="0"
@@ -471,7 +491,7 @@ document.addEventListener('DOMContentLoaded', () => {
             carrinho.forEach(item => {
                 const listItem = document.createElement('div');
                 listItem.classList.add('carrinho-item');
-                
+
                 listItem.innerHTML = `
                     <div class="item-header">${item.nome}</div>
                     <div class="item-footer">
@@ -506,9 +526,9 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             calcularTotalEAtualizarResumo();
-            renderizarOpcoesPagamento(); 
+            renderizarOpcoesPagamento();
         };
-        
+
         const manipularQuantidade = (itemId, acao) => {
             const index = carrinho.findIndex(item => item.id === itemId);
 
@@ -517,12 +537,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     carrinho[index].quantidade += 1;
                 } else if (acao === 'diminuir') {
                     carrinho[index].quantidade -= 1;
-                } else if (acao === 'cancelarItem') { 
+                } else if (acao === 'cancelarItem') {
                     carrinho.splice(index, 1);
-                    valorPago = 0; 
-                    pagamentosEfetuados = []; 
-                    renderizarCarrinho(); 
-                    return; 
+                    valorPago = 0;
+                    pagamentosEfetuados = [];
+                    renderizarCarrinho();
+                    return;
                 }
 
                 if (carrinho[index] && carrinho[index].quantidade <= 0) {
@@ -535,34 +555,48 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
+        // Modificada para usar produtosDoFirestore e nova estrutura de card
         const renderizarProdutos = () => {
             if (!acessoRapidoGrid || !outrosProdutosGrid) return;
 
             acessoRapidoGrid.innerHTML = '';
             outrosProdutosGrid.innerHTML = '';
 
-            produtos.forEach(produto => {
+            produtosDoFirestore.forEach(produto => {
                 const card = document.createElement('div');
-                card.classList.add('produto-card');
+                card.classList.add('produto-card'); // Usar a classe geral para styling
                 card.setAttribute('data-id', produto.id);
+
+                const precoFormatado = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(produto.preco);
+                const acessoRapidoTag = produto.acessoRapido ? '<div class="acesso-rapido-info">⚡ Acesso Rápido</div>' : '';
+
                 card.innerHTML = `
-                    <div class="icone">${produto.icone}</div>
-                    <div class="nome">${produto.nome}</div>
-                    <div class="preco">${formatarPreco(produto.preco)}</div>
+                    <div class="card-header">
+                        <div class="icone">${produto.icone || '❓'}</div>
+                        <div class="product-title-group">
+                            <div class="nome">${produto.nome}</div>
+                            <div class="product-id-display">ID: ${produto.id}</div>
+                        </div>
+                        <!-- Botões de ação (editar/excluir) removidos para o PDV -->
+                    </div>
+                    <div class="card-body">
+                        ${acessoRapidoTag}
+                        <div class="preco">R$ ${precoFormatado}</div>
+                    </div>
                 `;
-                
+
                 card.addEventListener('click', () => {
                     adicionarAoCarrinho(produto);
                 });
 
-                if (produto.rapido) {
+                if (produto.acessoRapido) {
                     acessoRapidoGrid.appendChild(card);
                 } else {
                     outrosProdutosGrid.appendChild(card);
                 }
             });
         };
-        
+
         const adicionarAoCarrinho = (produto) => {
             const itemExistente = carrinho.find(item => item.id === produto.id);
 
@@ -571,14 +605,20 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 carrinho.push({ ...produto, quantidade: 1 });
             }
-            valorPago = 0; 
+            valorPago = 0;
             pagamentosEfetuados = [];
-            
+
             renderizarCarrinho();
         };
 
-        renderizarProdutos();
-        renderizarCarrinho();
-        renderizarBotaoBrinde();
+        // Chamar fetchProductsFromFirestore antes de renderizar produtos
+        async function inicializarPDV() {
+            produtosDoFirestore = await fetchProductsFromFirestore();
+            renderizarProdutos();
+            renderizarCarrinho();
+            renderizarBotaoBrinde();
+        }
+
+        inicializarPDV();
     }
 });
