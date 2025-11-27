@@ -643,9 +643,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const termoBusca = filtro.toLowerCase().trim();
             const produtosFiltrados = produtosDoFirestore.filter(produto => {
-                // Filtra por ID ou nome do produto
-                return produto.id.toLowerCase().includes(termoBusca) ||
-                       produto.nome.toLowerCase().includes(termoBusca);
+                // Filtra SOMENTE por ID do produto
+                return produto.id.toLowerCase().includes(termoBusca);
             });
 
 
@@ -686,7 +685,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Se não houver filtro, ou o filtro estiver vazio, mostramos uma mensagem para ambos os grids.
             // Se houver filtro e nenhum resultado, também mostramos a mensagem.
             if (produtosFiltrados.length === 0 && termoBusca !== '') {
-                outrosProdutosGrid.innerHTML = '<p style="text-align: center; color: var(--text-muted); margin-top: 20px;">Nenhum produto encontrado com este termo.</p>';
+                outrosProdutosGrid.innerHTML = '<p style="text-align: center; color: var(--text-muted); margin-top: 20px;">Nenhum produto encontrado com este ID.</p>';
                 acessoRapidoGrid.innerHTML = ''; // Limpar o grid de acesso rápido se não houver resultados.
             } else if (produtosFiltrados.length === 0 && termoBusca === '') {
                  // Caso não haja produtos cadastrados e o filtro esteja vazio
