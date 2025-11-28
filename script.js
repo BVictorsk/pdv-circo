@@ -15,13 +15,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const troco = parseFloat(document.getElementById('troco').value.replace(',', '.'));
 
             if (isNaN(troco)) {
-                alert('Troco inicial inválido.');
+                console.error('Troco inicial inválido.');
                 return;
             }
 
             if (typeof db === 'undefined' || db === null) {
                 console.error("Error: Firestore 'db' object is not defined or null. Ensure firebase-config.js is loaded correctly.");
-                alert("Erro de conexão: Não foi possível acessar o banco de dados. Verifique sua configuração.");
+                console.error("Erro de conexão: Não foi possível acessar o banco de dados. Verifique sua configuração.");
                 return;
             }
 
@@ -38,14 +38,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         sessionStorage.setItem('trocoInicial', troco);
                         window.location.href = 'pdv.html';
                     } else {
-                        alert('Senha incorreta.');
+                        console.error('Senha incorreta.');
                     }
                 } else {
-                    alert('Usuário não encontrado.');
+                    console.error('Usuário não encontrado.');
                 }
             } catch (error) {
                 console.error("Erro ao autenticar usuário: ", error);
-                alert("Erro ao tentar fazer login. Verifique o console para mais detalhes.");
+                console.error("Erro ao tentar fazer login. Verifique o console para mais detalhes.");
             }
         });
     }
@@ -63,6 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let trocoNecessario = 0;
     let pagamentosEfetuados = [];
     let produtosDoFirestore = []; // Nova variável para armazenar produtos do Firestore
+    let vendaEmEdicaoId = null; // Guarda o ID da venda que está sendo editada
 
     const acessoRapidoGrid = document.getElementById('acesso-rapido-grid');
     const outrosProdutosGrid = document.getElementById('outros-produtos-grid');
@@ -82,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
         themeSwitcher.addEventListener('click', () => {
             body.classList.toggle('light-theme');
             const isLightTheme = body.classList.contains('light-theme');
-            themeSwitcher.textContent = isLightTheme ? 'Mudar para Tema Escuro' : 'Mudar para Tema Claro';
+            themeSwitcher.textContent = isLightTheme ? 'Tema Escuro' : 'Tema Claro';
         });
     }
 
@@ -95,6 +96,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const formatarPreco = (valor) => `R$ ${valor.toFixed(2).replace('.', ',')}`;
+
+        // Função para formatar o preço com vírgula automática ao digitar
+        function formatarValorMonetarioAoDigitar(event) {
+            let input = event.target;
+            let val = input.value.replace(/\D/g, ""); // Remove tudo que não for número
+
+            if (!val) {
+                input.value = "";
+                return;
+            }
+
+            // Garante pelo menos dois dígitos para os centavos
+            while (val.length < 3) {
+                val = "0" + val;
+            }
+
+            let inteiro = val.slice(0, -2);
+            let decimal = val.slice(-2);
+
+            // Remove zeros à esquerda do inteiro (ex: 050 -> 50)
+            inteiro = inteiro.replace(/^0+(?=\d)/, "");
+
+            input.value = `${inteiro},${decimal}`;
+        }
 
         // Nova função para buscar produtos do Firestore
         async function fetchProductsFromFirestore() {
@@ -115,81 +140,44 @@ document.addEventListener('DOMContentLoaded', () => {
         const calcularTotalEAtualizarResumo = () => {
             valorTotal = carrinho.reduce((acc, item) => acc + (item.preco * item.quantidade), 0);
             valorRestante = valorTotal - valorPago;
+            trocoNecessario = Math.max(0, valorPago - valorTotal);
 
-            let resumoHTML = '';
+            carrinhoResumoDiv.innerHTML = ''; // Limpa o resumo para reconstruir
 
-            let pagamentosListaHTML = pagamentosEfetuados.length > 0 ?
-                '<ul class="pagamentos-lista">' + pagamentosEfetuados.map(p =>
-                    `<li class="pagamento-item">${p.tipo.toUpperCase()}: ${formatarPreco(p.valor)}</li>`
-                ).join('') + '</ul>'
-                : '';
-
-            const pagamentoHeader = carrinho.length > 0 ? '<p class="carrinho-pagamento">Pagamento:</p>' : '';
-
-            const opcoesPagamentoEBotaoCancelar = `
-                ${pagamentosListaHTML}
-                <div class="opcoes-pagamento" id="opcoes-pagamento">
-                    </div>
-                <button class="btn-pagamento btn-cancelar" id="btn-cancelar">
-                    ❌ Cancelar Pedido
-                </button>
-            `;
-
-            const resultadoContainer = carrinhoResumoDiv.querySelector('.resultado-container') || document.createElement('div');
+            // Container para os totais
+            const resultadoContainer = document.createElement('div');
             resultadoContainer.classList.add('resultado-container');
 
-            if (valorRestante > 0 && carrinho.length > 0) {
-                resumoHTML = `
-                    <div class="carrinho-total" style="color: var(--yellow-warning);">
-                        <span>FALTA:</span>
-                        <span class="valor" id="total-valor">${formatarPreco(valorRestante)}</span>
-                    </div>
-                `;
-            } else if (carrinho.length > 0) {
-                trocoNecessario = Math.max(0, valorPago - valorTotal);
-                const cor = trocoNecessario > 0 ? 'var(--green-success)' : 'var(--text-light)';
-                const label = trocoNecessario > 0 ? 'TROCO' : 'TOTAL';
-                const valorDisplay = trocoNecessario > 0 ? formatarPreco(trocoNecessario) : formatarPreco(valorTotal);
-                const textoFinalizar = trocoNecessario > 0 ? `FINALIZAR VENDA (Troco: ${formatarPreco(trocoNecessario)})` : 'FINALIZAR VENDA';
-
-                resumoHTML = `
-                    <div class="carrinho-total" style="color: ${cor};">
-                        <span>${label}:</span>
-                        <span class="valor" id="total-valor">${valorDisplay}</span>
-                    </div>
-                    <button class="btn-primary btn-finalizar" id="btn-finalizar">
-                        ${textoFinalizar}
-                    </button>
-                `;
+            if (carrinho.length > 0) {
+                if (valorRestante > 0) {
+                    resultadoContainer.innerHTML = `<div class="carrinho-total" style="color: var(--yellow-warning);"><span>FALTA:</span><span class="valor">${formatarPreco(valorRestante)}</span></div>`;
+                } else {
+                    const cor = trocoNecessario > 0 ? 'var(--green-success)' : 'var(--text-light)';
+                    const label = trocoNecessario > 0 ? 'TROCO' : 'TOTAL';
+                    const valorDisplay = trocoNecessario > 0 ? formatarPreco(trocoNecessario) : formatarPreco(valorTotal);
+                    const textoBotao = vendaEmEdicaoId ? 'ATUALIZAR VENDA' : 'FINALIZAR VENDA';
+                    resultadoContainer.innerHTML = `<div class="carrinho-total" style="color: ${cor};"><span>${label}:</span><span class="valor">${valorDisplay}</span></div><button class="btn-primary btn-finalizar" id="btn-finalizar">${textoBotao}</button>`;
+                }
             } else {
-                trocoNecessario = 0;
-                resumoHTML = `
-                    <div class="carrinho-total">
-                        <span>TOTAL:</span>
-                        <span class="valor" id="total-valor">${formatarPreco(0)}</span>
-                    </div>
-                `;
+                 resultadoContainer.innerHTML = `<div class="carrinho-total"><span>TOTAL:</span><span class="valor">${formatarPreco(0)}</span></div>`;
             }
-
-            resultadoContainer.innerHTML = resumoHTML;
-
-            carrinhoResumoDiv.innerHTML = '';
             carrinhoResumoDiv.appendChild(resultadoContainer);
-            carrinhoResumoDiv.insertAdjacentHTML('beforeend', pagamentoHeader);
+            
+            // Adiciona opções de pagamento e cancelar
+            if(carrinho.length > 0) {
+                // Renderiza pagamentos já efetuados apenas se houverem
+                if (pagamentosEfetuados.length > 0) {
+                    carrinhoResumoDiv.insertAdjacentHTML('beforeend',
+                        '<ul class="pagamentos-lista">' +
+                        pagamentosEfetuados.map(p => `<li class="pagamento-item">${p.tipo.toUpperCase()}: ${formatarPreco(p.valor)}</li>`).join('') +
+                        '</ul>'
+                    );
+                }
 
-            if (valorRestante > 0 || valorPago === 0 && carrinho.length > 0) {
-                carrinhoResumoDiv.insertAdjacentHTML('beforeend', opcoesPagamentoEBotaoCancelar);
-            }
-            // Only show payment options if there's a remaining value to pay or if it's a new empty cart with items added
-            else if (carrinho.length > 0) {
-                carrinhoResumoDiv.insertAdjacentHTML('beforeend', pagamentosListaHTML);
-                carrinhoResumoDiv.insertAdjacentHTML('beforeend', `<button class="btn-pagamento btn-cancelar" id="btn-cancelar" style="grid-column: span 2;">❌ Cancelar Pedido</button>`);
-            }
-
-            if (valorRestante > 0 || valorPago === 0 && carrinho.length > 0) {
+                carrinhoResumoDiv.insertAdjacentHTML('beforeend', '<p class="carrinho-pagamento">Pagamento:</p><div class="opcoes-pagamento" id="opcoes-pagamento"></div><button class="btn-pagamento btn-cancelar" id="btn-cancelar">❌ Cancelar Pedido</button>');
                 renderizarOpcoesPagamento();
             }
-
+            
             reassociarListenersGerais();
         };
 
@@ -211,12 +199,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const finalizarVenda = async (tipoFinalizacao = 'PAGO') => {
             if (carrinho.length === 0) {
-                 alert('Adicione itens ao carrinho para finalizar a venda.');
+                 console.log('Adicione itens ao carrinho para finalizar a venda.');
                  return;
             }
 
             if (tipoFinalizacao === 'PAGO' && valorRestante > 0) {
-                alert('Ainda faltam ' + formatarPreco(valorRestante) + ' para completar o pagamento.');
+                console.log('Ainda faltam ' + formatarPreco(valorRestante) + ' para completar o pagamento.');
                 return;
             }
 
@@ -224,7 +212,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 if (typeof db === 'undefined' || db === null) {
                     console.error("Error: Firestore 'db' object is not defined or null. Ensure firebase-config.js is loaded correctly.");
-                    alert("Erro de conexão: Não foi possível acessar o banco de dados. Verifique sua configuração.");
+                    console.error("Erro de conexão: Não foi possível acessar o banco de dados. Verifique sua configuração.");
                     return;
                 }
 
@@ -286,23 +274,22 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (error) {
                 // Se der erro ao salvar, avisa o usuário e não continua
                 console.error("Erro ao salvar venda: ", error);
-                alert("ERRO CRÍTICO: A venda NÃO foi salva no banco de dados. A impressão foi cancelada. Verifique sua conexão ou as regras do Firebase. Tente novamente.");
+                console.error("ERRO CRÍTICO: A venda NÃO foi salva no banco de dados. A impressão foi cancelada. Verifique sua conexão ou as regras do Firebase. Tente novamente.");
             }
             // --- FIM LÓGICA FIREBASE ---
         };
 
         const cancelarPedido = () => {
             if (carrinho.length > 0) {
-                if (confirm('Tem certeza que deseja cancelar o pedido atual?')) {
-                    carrinho = [];
-                    valorPago = 0;
-                    valorTotal = 0;
-                    trocoNecessario = 0;
-                    pagamentosEfetuados = [];
-                    renderizarCarrinho();
-                }
+                console.log('Pedido cancelado.');
+                carrinho = [];
+                valorPago = 0;
+                valorTotal = 0;
+                trocoNecessario = 0;
+                pagamentosEfetuados = [];
+                renderizarCarrinho();
             } else {
-                alert('O carrinho já está vazio.');
+                console.log('O carrinho já está vazio.');
             }
         };
 
@@ -317,7 +304,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const mostrarInputBrinde = () => {
             if (carrinho.length === 0) {
-                alert('Adicione itens ao carrinho para dar um brinde.');
+                console.log('Adicione itens ao carrinho para dar um brinde.');
                 return;
             }
 
@@ -356,12 +343,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     pagamentosEfetuados = [{ tipo: 'BRINDE (Cortesia)', valor: valorTotal }];
                     finalizarVenda('BRINDE');
                 } else {
-                    alert('Senha incorreta para dar brinde.');
+                    console.error('Senha incorreta para dar brinde.');
                     senhaInput.value = '';
                     senhaInput.focus();
                 }
             } else {
-                alert('Você não tem permissão para dar brindes.');
+                console.error('Você não tem permissão para dar brindes.');
                 senhaInput.value = '';
                 renderizarBotaoBrinde(); // Restore the original button
             }
@@ -419,13 +406,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const opcoesHTML = tipos.map(tipo => {
                 if (tipo === inputAtivo) {
+                    const displayValue = (valorSugerido > 0 ? valorSugerido.toFixed(2) : '0.00').replace('.', ',');
                     return `
                         <div class="input-pagamento-container" data-tipo="${tipo}">
-                            <input type="number"
+                            <input type="text"
                                    id="input-${tipo}"
                                    class="input-pagamento-valor"
-                                   placeholder="${formatarPreco(valorSugerido).replace('R$', '')}"
-                                   value="${valorSugerido > 0 ? valorSugerido.toFixed(2) : '0.00'}"
+                                   placeholder="0,00"
+                                   value="${displayValue}"
                                    min="0"
                                    step="0.01">
                             <button class="btn-confirmar-pagamento" data-tipo="${tipo}">
@@ -456,7 +444,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 btnConfirmar.addEventListener('click', (e) => {
                     const tipoPagamento = e.currentTarget.getAttribute('data-tipo');
                     const input = document.getElementById(`input-${tipoPagamento}`);
-                    let valorDigitado = parseFloat(input.value);
+                    let valorDigitado = parseFloat(input.value.replace(',', '.')); // Converte para float
 
                     if (isNaN(valorDigitado) || valorDigitado <= 0) {
                         renderizarOpcoesPagamento();
@@ -469,6 +457,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const inputElement = opcoesContainer.querySelector('.input-pagamento-valor');
             if (inputElement) {
                 inputElement.focus();
+                inputElement.select(); // Seleciona o texto para facilitar a digitação
+                 inputElement.addEventListener('input', formatarValorMonetarioAoDigitar); // Adiciona a formatação automática
                  inputElement.addEventListener('keydown', (e) => {
                     if (e.key === 'Enter') {
                         e.preventDefault();

@@ -6,154 +6,121 @@ function imprimirRecibo(vendaId, carrinho, valorTotal, pagamentosEfetuados, troc
     const data = new Date();
     const dataFormatada = `${data.toLocaleDateString('pt-BR')} ${data.toLocaleTimeString('pt-BR')}`;
 
-    // Função auxiliar para imprimir cada item individualmente
-    function imprimirItemIndividual(item, index, total) {
-        let cupom = `PATATI PATATA\n`;
-        cupom += `${item.produto.toUpperCase()}\n`;
-        cupom += `------------------------------\n`;
-        cupom += `Qtd: ${item.qtd}\n`;
-        cupom += `Valor Unit: ${formatarPreco(item.preco)}\n`;
-        cupom += `Subtotal: ${formatarPreco(item.preco * item.qtd)}\n`;
-        cupom += `------------------------------\n`;
-        cupom += `Data: ${dataFormatada}\n`;
-        cupom += `Operador: ${loggedInUser || 'N/A'}\n`;
-        cupom += `\n\n`;
-        
-        // Adiciona sequência de corte ESC/POS (GS V A n)
-        cupom += '\x1D\x56\x41\x00';
-        
-        return cupom;
+    // Montar o objeto recibo para Android e/ou impressão web
+    const recibo = {
+        id: vendaId, // Usar o ID da venda do Firestore
+        total: valorTotal, // Total numérico
+        itens: carrinho.map(item => ({
+            produto: item.nome,
+            qtd: item.quantidade,
+            valor: item.preco // Valor unitário do item
+        })),
+        pagamentos: pagamentosEfetuados.map(p => ({
+            tipo: p.tipo.toUpperCase(),
+            valor: p.valor
+        })),
+        troco: trocoNecessario,
+        data: dataFormatada,
+        operador: loggedInUser || 'N/A'
+    };
+
+    // Constrói o texto de impressão em formato simples
+    let dadosParaImpressao = `PATATI PATATA PDV\n`;
+    dadosParaImpressao += `Data: ${recibo.data}\n`;
+    dadosParaImpressao += `Operador: ${recibo.operador}\n`;
+    dadosParaImpressao += `------------------------------\n`;
+    dadosParaImpressao += `ITENS:\n`;
+    recibo.itens.forEach(item => {
+        dadosParaImpressao += `${item.qtd}x ${item.produto} - ${formatarPreco(item.valor * item.qtd)}\n`;
+    });
+    dadosParaImpressao += `------------------------------\n`;
+    dadosParaImpressao += `TOTAL: ${formatarPreco(recibo.total)}\n`;
+    recibo.pagamentos.forEach(p => {
+        dadosParaImpressao += `${p.tipo}: ${formatarPreco(p.valor)}\n`;
+    });
+    if (recibo.troco > 0) {
+        dadosParaImpressao += `TROCO: ${formatarPreco(recibo.troco)}\n`;
     }
+    dadosParaImpressao += `------------------------------\n`;
+    dadosParaImpressao += `Obrigado e volte sempre!\n\n\n\n\n  <cut>\n`; // Comando de corte
 
-    // Enviar cada item para impressão sequencialmente
-    let successCount = 0;
-    
-    // Mapear todos os cupons a imprimir
-    const cupons = carrinho.map((item, index) => 
-        imprimirItemIndividual(item, index, carrinho.length)
-    );
-
-    // Adicionar cupom de resumo final apenas se houver pagamentos
-    if (pagamentosEfetuados.length > 0) {
-        let resumoCupom = `PATATI PATATA - FECHAMENTO\n`;
-        resumoCupom += `------------------------------\n`;
-        resumoCupom += `Venda ID: ${vendaId}\n`;
-        resumoCupom += `TOTAL: ${formatarPreco(valorTotal)}\n\n`;
-        resumoCupom += `PAGAMENTOS:\n`;
-        pagamentosEfetuados.forEach(p => {
-            resumoCupom += `${p.tipo}: ${formatarPreco(p.valor)}\n`;
-        });
-        if (trocoNecessario > 0) {
-            resumoCupom += `------------------------------\n`;
-            resumoCupom += `TROCO: ${formatarPreco(trocoNecessario)}\n`;
-        }
-        resumoCupom += `\nData: ${dataFormatada}\n`;
-        resumoCupom += `Operador: ${loggedInUser || 'N/A'}\n`;
-        resumoCupom += `\n\n`;
-        resumoCupom += '\x1D\x56\x41\x00';
-        
-        cupons.push(resumoCupom);
-    }
-
-    // Função para enviar cupom para impressão
-    function enviarCupom(dadosParaImpressao, callback) {
-        // 1. Tentar imprimir via interface AndroidPrint
-        if (window.AndroidPrint && typeof window.AndroidPrint.print === 'function') {
-            console.log('AndroidPrint.print detectado. Enviando cupom para impressão.');
-            try {
-                window.AndroidPrint.print(dadosParaImpressao);
-                if (callback) callback(true);
-                return;
-            } catch (e) {
-                console.error('Erro ao chamar AndroidPrint.print:', e);
-                if (callback) callback(false);
-            }
-        }
-
-        // Se AndroidPrint existir, mas não tiver método print, tentamos outros métodos
-        if (window.AndroidPrint) {
-            console.log('AndroidPrint detectado sem método print; tentando fallbacks.');
-            if (typeof window.AndroidPrint.printBase64 === 'function') {
-                const b64 = escposBase64ForText(dadosParaImpressao);
-                if (b64) {
-                    try { window.AndroidPrint.printBase64(b64); if (callback) callback(true); return; } catch (e) { console.error(e); }
-                }
-            }
-            if (typeof window.AndroidPrint.printText === 'function') {
-                try { window.AndroidPrint.printText(dadosParaImpressao); if (callback) callback(true); return; } catch (e) { console.error(e); }
-            }
-        }
-
-        // 2. Fallback para a interface AndroidInterface (legado)
-        if (window.AndroidInterface) {
-            console.log('AndroidInterface detectado. Tentando métodos legados.');
-            if (typeof window.AndroidInterface.imprimirTexto === 'function') {
-                try { window.AndroidInterface.imprimirTexto(dadosParaImpressao); if (callback) callback(true); return; } catch (e) { console.error(e); }
-            }
-        }
-
-        // Se nenhuma interface Android foi encontrada, não fazer fallback para browser print
-        // pois vamos imprimir múltiplos cupons
-        console.warn('Nenhuma interface Android de impressão detectada.');
-        if (callback) callback(false);
-    }
-
-    // Função para imprimir cupons sequencialmente com pequeno delay
-    function imprimirSequencialmente(cupons, index = 0) {
-        if (index >= cupons.length) {
-            console.log(`Impressão concluída: ${cupons.length} cupom(ns) enviado(s)`);
-            return;
-        }
-
-        const cupomAtual = cupons[index];
-        console.log(`Enviando cupom ${index + 1} de ${cupons.length}`);
-        
-        enviarCupom(cupomAtual, (sucesso) => {
-            if (sucesso) successCount++;
-            // Pequeno delay entre cupons (500ms)
-            setTimeout(() => {
-                imprimirSequencialmente(cupons, index + 1);
-            }, 500);
-        });
-    }
-
-    // Iniciar impressão sequencial
-    if (cupons.length > 0) {
-        imprimirSequencialmente(cupons);
+    // 1. Tentar imprimir via interface AndroidPrint (mini app)
+    if (window.AndroidPrint && typeof window.AndroidPrint.print === 'function') {
+        console.log("Enviando dados para impressão para o mini app Android:", dadosParaImpressao);
+        window.AndroidPrint.print(dadosParaImpressao);
     } else {
-        console.warn('Carrinho vazio, nada para imprimir.');
-    }
-}
-
-// Helpers: converter texto para ESC/POS (Base64) para impressoras térmicas
-function uint8ToBase64(u8) {
-    let binary = '';
-    for (let i = 0; i < u8.length; i++) {
-        binary += String.fromCharCode(u8[i]);
-    }
-    return btoa(binary);
-}
-
-function escposBase64ForText(text) {
-    try {
-        const encoder = typeof TextEncoder !== 'undefined' ? new TextEncoder() : null;
-        let textBytes;
-        if (encoder) {
-            textBytes = encoder.encode(text + '\n\n\n');
+        // 2. Fallback para a interface AndroidInterface (antiga, se existir)
+        if (window.AndroidInterface && window.AndroidInterface.imprimirCupom) {
+            console.log("Interface AndroidPrint não encontrada, tentando AndroidInterface (legado).");
+            const reciboParaAndroid = {
+                ...recibo,
+                total: formatarPreco(recibo.total),
+                itens: recibo.itens.map(item => ({
+                    ...item,
+                    valor: formatarPreco(item.valor * item.qtd)
+                })),
+                pagamentos: recibo.pagamentos.map(p => ({
+                    ...p,
+                    valor: formatarPreco(p.valor)
+                })),
+                troco: formatarPreco(recibo.troco)
+            };
+            window.AndroidInterface.imprimirCupom(JSON.stringify(reciboParaAndroid), "192.168.1.200");
         } else {
-            const str = unescape(encodeURIComponent(text + '\n\n\n'));
-            textBytes = new Uint8Array(str.length);
-            for (let i = 0; i < str.length; i++) textBytes[i] = str.charCodeAt(i);
-        }
+            // 3. Fallback para impressão via navegador (método existente)
+            console.log("Nenhuma interface Android detectada. Imprimindo via navegador.");
+            let itensReciboHTML = recibo.itens.map(item => `
+                <tr>
+                    <td>${item.qtd}x ${item.produto}</td>
+                    <td>${formatarPreco(item.valor * item.qtd)}</td>
+                </tr>
+            `).join('');
 
-        // Corte parcial comum: GS V 65 0  (pode variar conforme modelo)
-        const cut = new Uint8Array([0x1D, 0x56, 0x41, 0x00]);
-        const data = new Uint8Array(textBytes.length + cut.length);
-        data.set(textBytes, 0);
-        data.set(cut, textBytes.length);
-        return uint8ToBase64(data);
-    } catch (err) {
-        console.error('Erro ao gerar ESC/POS Base64:', err);
-        return null;
+            let pagamentosReciboHTML = recibo.pagamentos.map(p => `
+                <p><strong>${p.tipo}:</strong> ${formatarPreco(p.valor)}</p>
+            `).join('');
+
+            const conteudoRecibo = `
+                <html>
+                <head>
+                    <title>Recibo</title>
+                    <style>
+                        body { font-family: 'Courier New', monospace; font-size: 10px; color: #000; }
+                        .recibo-container { width: 280px; margin: 0 auto; }
+                        h2 { text-align: center; margin-bottom: 10px; font-size: 14px; }
+                        p { margin: 2px 0; }
+                        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+                        th, td { text-align: left; padding: 2px; }
+                        .total { font-weight: bold; font-size: 12px; }
+                        hr { border: none; border-top: 1px dashed #000; margin: 5px 0; }
+                    </style>
+                </head>
+                <body>
+                    <div class="recibo-container">
+                        <h2>Patati Patata PDV</h2>
+                        <p>Data: ${recibo.data}</p>
+                        <p>Operador: ${recibo.operador}</p>
+                        <hr>
+                        <table>
+                            ${itensReciboHTML}
+                        </table>
+                        <hr>
+                        <p class="total">TOTAL: ${formatarPreco(recibo.total)}</p>
+                        ${pagamentosReciboHTML}
+                        ${recibo.troco > 0 ? `<p class="total">TROCO: ${formatarPreco(recibo.troco)}</p>` : ''}
+                        <hr>
+                        <p style="text-align: center;">Obrigado e volte sempre!</p>
+                    </div>
+                </body>
+                </html>
+            `;
+
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(conteudoRecibo);
+            printWindow.document.close();
+            printWindow.focus();
+            printWindow.print();
+            printWindow.close();
+        }
     }
 }
