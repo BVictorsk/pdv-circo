@@ -81,26 +81,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     /**
-     * Prepara os dados de uma venda para edição, armazena no sessionStorage
-     * e redireciona para a página do PDV.
+     * Prepara os dados de uma venda para edição, armazena o ID no sessionStorage
+     * e redireciona para a nova página de edição.
      * @param {string} vendaId - O ID do documento da venda no Firestore.
      */
     window.editarVenda = async (vendaId) => {
         console.log(`Iniciando edição da venda ID: ${vendaId}`);
         try {
-            const vendaDoc = await db.collection("vendas").doc(vendaId).get();
-            if (vendaDoc.exists) {
-                const vendaData = vendaDoc.data();
-                
-                sessionStorage.setItem('editVendaId', vendaId);
-                sessionStorage.setItem('cartItems', JSON.stringify(vendaData.itens));
-                
-                window.location.href = 'pdv.html';
-            } else {
-                console.error("Venda não encontrada. A transação pode ter sido removida.");
-            }
+            // Armazena apenas o ID da venda no sessionStorage. A página de edição
+            // irá buscar todos os detalhes da venda usando este ID.
+            sessionStorage.setItem('editVendaId', vendaId);
+            
+            // Redireciona para a nova página de edição de transação
+            window.location.href = 'editar_transacao.html';
+            
         } catch (error) {
-            console.error("Erro ao buscar venda para edição:", error);
+            console.error("Erro ao preparar venda para edição:", error);
         }
     };
 
