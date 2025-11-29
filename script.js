@@ -249,7 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const newCount = currentCount + 1;
                     transaction.set(counterRef, { [dateStringForCounter]: newCount }, { merge: true });
 
-                    vendaId = `${loggedInUser}-${dateFormattedForId}-${newCount}`;
+                    vendaId = `${loggedInUser}${dateFormattedForId}-${newCount}`;
                     const vendaRef = db.collection("vendas").doc(vendaId);
 
                     transaction.set(vendaRef, {
