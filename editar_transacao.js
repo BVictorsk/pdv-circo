@@ -1,4 +1,6 @@
+
 document.addEventListener('DOMContentLoaded', async () => {
+    const db = firebase.firestore();
     // --- ELEMENT SELECTORS ---
     const userDisplay = document.getElementById('user-display');
     const transacaoDetalhesContainer = document.getElementById('transacao-detalhes');
@@ -171,7 +173,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 valorTotal: novoTotal,
                 valorOriginalTroca: valorOriginalDaCompra,
                 itensAnteriores: itensOriginais,
-                pagamentosDiferenca: pagamentosDaDiferenca,
+                pagamentosDiferenca: pagamentosDaDiferenca || [],
                 ultimaAtualizacao: firebase.firestore.FieldValue.serverTimestamp()
             });
 
@@ -197,7 +199,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     `${vendaId}-TROCA-${Date.now()}`,
                     carrinhoImpressao,
                     diferencaCalculada > 0 ? diferencaCalculada : 0,
-                    pagamentosDaDiferenca,
+                    pagamentosDaDiferenca || [],
                     trocoPagamentoDiferenca > 0 ? trocoPagamentoDiferenca : troco,
                     formatarPreco,
                     loggedInUser,
