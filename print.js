@@ -96,7 +96,7 @@ function imprimirViaNavegador(vendaId, carrinho, valorTotal, pagamentosEfetuados
         return `
         <tr>
             <td>${quantidade}x ${nome}</td>
-            <td>${formatarPreco(item.precoUnitario * quantidade)}</td>
+            <td>${formatarPreco(item.preco * quantidade)}</td>
         </tr>
     `}).join('');
 
