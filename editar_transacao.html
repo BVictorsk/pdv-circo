@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Transação - Patati Patata PDV</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="portal_admin.css">
+    <style>
+        /* Estilos adicionais para a página de edição */
+        .edit-container {
+            display: flex;
+            gap: 30px;
+        }
+        .venda-atual-panel, .catalogo-panel {
+            background-color: var(--card-background);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+        .venda-atual-panel {
+            width: 50%;
+        }
+        .catalogo-panel {
+            width: 50%;
+        }
+        .item-edicao {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        #search-catalogo {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid var(--input-border-color);
+            border-radius: 6px;
+        }
+        .catalogo-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            border-radius: 6px;
+            transition: background-color 0.2s;
+        }
+        .catalogo-item:hover {
+            background-color: #f0f0f0;
+        }
+        .btn-salvar-cancelar-container {
+            margin-top: 20px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <header class="pdv-header">
+        <div class="pdv-header-left">
+            Patati Patata PDV - Editar Transação
+        </div>
+        <div class="pdv-header-right">
+            <span style="color: var(--text-muted); font-size: 14px;">Logado como: <strong id="user-display">demo</strong></span>
+            <a href="minhas_transacoes.html" class="btn-header">Minhas Transações</a>
+            <a href="pdv.html" class="btn-header">Voltar ao PDV</a>
+            <button class="btn-header btn-fechar" onclick="location.href='index.html'">
+                ❌ Sair
+            </button>
+        </div>
+    </header>
+
+    <main class="admin-main">
+        <div id="transacao-detalhes">
+            <!-- Detalhes básicos da transação serão carregados aqui -->
+        </div>
+
+        <div class="edit-container">
+            <!-- Painel da Venda Atual -->
+            <div class="venda-atual-panel">
+                <h3>Itens da Venda</h3>
+                <div id="itens-venda-container">
+                    <!-- Itens da venda para edição serão carregados aqui -->
+                </div>
+            </div>
+
+            <!-- Painel do Catálogo de Produtos -->
+            <div class="catalogo-panel">
+                <h3>Adicionar Itens do Catálogo</h3>
+                <input type="text" id="search-catalogo" placeholder="Buscar produto...">
+                <div id="catalogo-produtos-container">
+                    <!-- Lista de produtos do catálogo será carregada aqui -->
+                </div>
+            </div>
+        </div>
+
+        <div class="btn-salvar-cancelar-container">
+            <button class="btn-header btn-fechar" onclick="location.href='minhas_transacoes.html'">Cancelar</button>
+            <button id="btn-salvar" class="btn-header">Salvar Alterações</button>
+        </div>
+    </main>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="editar_transacao.js"></script>
+</body>
+</html>
