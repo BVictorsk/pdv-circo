@@ -40,22 +40,39 @@
             color: var(--red-error);
         }
 
-        /* Estilos de Impressão */
-        @media print {
-            body * {
-                visibility: hidden;
-            }
-            #printable-area, #printable-area * {
-                visibility: visible;
-            }
-            #printable-area {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-            }
+        /* --- NOVOS ESTILOS --- */
+
+        /* Oculta o resumo detalhado (total de itens, vendas, pagamentos) na visualização de tela normal */
+        #resumo-content {
+            display: none;
         }
 
+        /* Estilos específicos para impressão */
+        @media print {
+            body {
+                background-color: white; /* Garante fundo branco na impressão */
+            }
+
+            /* Esconde elementos desnecessários na impressão, como o cabeçalho e o botão de imprimir */
+            .pdv-header, #btn-imprimir {
+                display: none;
+            }
+
+            /* Mostra o resumo detalhado que estava oculto na tela */
+            #resumo-content {
+                display: block;
+            }
+
+            /* Garante que o container principal e o de conferência ocupem o espaço necessário */
+            .pdv-main, #fechamento-container {
+                width: 100%;
+                max-width: 100%;
+                padding: 0;
+                margin: 0;
+                box-shadow: none;
+                border: none;
+            }
+        }
     </style>
 </head>
 <body>
