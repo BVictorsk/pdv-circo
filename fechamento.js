@@ -15,19 +15,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    // Função para formatar o input de moeda
-    const formatCurrencyInput = (input) => {
-        let value = input.value.replace(/\D/g, ''); // CORREÇÃO: Removido um nível de escape de \D
-        value = (parseInt(value, 10) / 100).toFixed(2).replace('.', ',');
-        if (value === 'NaN') value = '0,00';
-        input.value = value;
-    };
-
-    // Função para converter string de moeda para float
-    const parseCurrency = (value) => {
-        return parseFloat(value.replace(/\./g, '').replace(',', '.')) || 0;
-    };
-
     try {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -98,6 +85,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         const totalDinheiroComTroco = totaisPorPagamento.dinheiro + trocoInicial;
         const formatarPreco = (valor) => `R$ ${valor.toFixed(2).replace('.', ',')}`;
 
+        const produtosHTML = Object.keys(produtosVendidos).length > 0 ?
+            `<div class="fechamento-detalhes" style="margin-top: 25px; border-top: 1px dashed var(--border-color); padding-top: 15px;">
+                <h3 style="text-align: center; margin-bottom: 20px;">PRODUTOS VENDIDOS</h3>
+                ${Object.keys(produtosVendidos).sort().map(nome => {
+                    const produto = produtosVendidos[nome];
+                    return `
+                        <div class="carrinho-total">
+                            <span>${produto.quantidade}x ${nome}</span>
+                            <span class="valor">${formatarPreco(produto.valorTotal)}</span>
+                        </div>
+                    `;
+                }).join('')}
+            </div>` : '';
+
         resumoContent.innerHTML = `
             <div class="fechamento-info" style="margin-bottom: 20px; text-align: center; font-size: 0.9em; color: var(--text-muted);">
                 <p><strong>UNIDADE SP</strong></p>
@@ -113,6 +114,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <span>TOTAL DE VENDAS:</span>
                 <span class="valor">${formatarPreco(totalVendas)}</span>
             </div>
+            ${produtosHTML}
             <div class="fechamento-detalhes" style="margin-top: 25px; border-top: 1px dashed var(--border-color); padding-top: 15px;">
                 <h3 style="text-align: center; margin-bottom: 20px;">DETALHES POR PAGAMENTO</h3>
                 <div class="carrinho-total"><span>PIX:</span><span class="valor">${formatarPreco(totaisPorPagamento.pix)}</span></div>
@@ -153,7 +155,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         };
 
         function calcularDiferenca(tipo) {
-            const valorApurado = parseCurrency(inputsApurados[tipo].value);
+            const valorApurado = parseFloat(inputsApurados[tipo].value) || 0;
             const valorSistema = totaisPorPagamento[tipo];
             const diferenca = valorApurado - valorSistema;
 
@@ -169,118 +171,116 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         Object.keys(inputsApurados).forEach(tipo => {
-            inputsApurados[tipo].addEventListener('input', (e) => {
-                formatCurrencyInput(e.target);
-                calcularDiferenca(tipo);
-            });
+            inputsApurados[tipo].addEventListener('input', () => calcularDiferenca(tipo));
         });
 
         // Lógica de Impressão
         const btnImprimir = document.getElementById('btn-imprimir');
         btnImprimir.addEventListener('click', () => {
-            if (window.AndroidPrint && typeof window.AndroidPrint.print === 'function') {
-                imprimirFechamentoTermica(); 
-            } else {
-                console.warn("Interface AndroidPrint não encontrada. Usando método de impressão web.");
-                imprimirFechamentoViaNavegador();
-            }
-        });
-
-        function imprimirFechamentoTermica() {
-            console.log("Iniciando impressão do fechamento na impressora térmica...");
-
             const dataHora = new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR');
-            const formatarPreco = (valor) => `R$ ${valor.toFixed(2).replace('.', ',')}`;
-            const linhaSeparadora = '--------------------------------\\n';
-            const linhaSeparadoraDupla = '================================\\n';
 
-            const alinharTexto = (esquerda, direita) => {
-                const larguraLinha = 32;
-                const espacos = larguraLinha - esquerda.length - direita.length;
-                return esquerda + ' '.repeat(Math.max(0, espacos)) + direita + '\\n';
-            };
-            
-            let textoParaImpressao = '';
-            textoParaImpressao += '         UNIDADE SP\\n';
-            textoParaImpressao += '      FECHAMENTO DE CAIXA\\n';
-            textoParaImpressao += linhaSeparadora;
-            textoParaImpressao += `Data: ${dataHora}\\n`;
-            textoParaImpressao += `Operador: ${loggedInUser.toUpperCase()}\\n`;
-            textoParaImpressao += linhaSeparadora;
-
-            textoParaImpressao += alinharTexto('TOTAL DE ITENS:', totalItens.toString());
-            textoParaImpressao += alinharTexto('TOTAL DE VENDAS:', formatarPreco(totalVendas));
-
+            let produtosPrintHTML = '';
             const sortedProdutos = Object.keys(produtosVendidos).sort();
             if (sortedProdutos.length > 0) {
-                textoParaImpressao += linhaSeparadora;
-                textoParaImpressao += '       PRODUTOS VENDIDOS\\n';
-                textoParaImpressao += linhaSeparadora;
+                produtosPrintHTML += '<div style="border-top: 1px dashed #000; padding-top: 10px; margin-top: 10px;"><h3>PRODUTOS VENDIDOS</h3>';
                 sortedProdutos.forEach(nome => {
                     const produto = produtosVendidos[nome];
-                    const nomeProd = `${produto.quantidade}x ${nome}`;
-                    textoParaImpressao += alinharTexto(nomeProd, formatarPreco(produto.valorTotal));
+                    produtosPrintHTML += `<div style="display: flex; justify-content: space-between;"><span>${produto.quantidade}x ${nome}</span><span>${formatarPreco(produto.valorTotal)}</span></div>`;
                 });
+                produtosPrintHTML += '</div>';
             }
 
-            textoParaImpressao += linhaSeparadora;
-            textoParaImpressao += '      PAGAMENTOS (SISTEMA)\\n';
-            textoParaImpressao += linhaSeparadora;
-            textoParaImpressao += alinharTexto('PIX:', formatarPreco(totaisPorPagamento.pix));
-            textoParaImpressao += alinharTexto('CREDITO:', formatarPreco(totaisPorPagamento.credito));
-            textoParaImpressao += alinharTexto('DEBITO:', formatarPreco(totaisPorPagamento.debito));
-            textoParaImpressao += alinharTexto('DINHEIRO (Vendas):', formatarPreco(totaisPorPagamento.dinheiro));
-            if (totaisPorPagamento.brinde > 0) {
-                textoParaImpressao += alinharTexto('CORTESIAS:', formatarPreco(totaisPorPagamento.brinde));
-            }
+            const apuradoPix = parseFloat(inputsApurados.pix.value) || 0;
+            const apuradoCredito = parseFloat(inputsApurados.credito.value) || 0;
+            const apuradoDebito = parseFloat(inputsApurados.debito.value) || 0;
+            const apuradoDinheiro = parseFloat(inputsApurados.dinheiro.value) || 0;
 
-            textoParaImpressao += linhaSeparadora;
-            textoParaImpressao += alinharTexto('Troco Inicial:', formatarPreco(trocoInicial));
-            textoParaImpressao += alinharTexto('DINHEIRO EM CAIXA:', formatarPreco(totalDinheiroComTroco));
+            const conferenciaHTML = `
+                <div style="border-top: 2px solid #000; padding-top: 15px; margin-top: 20px;">
+                    <h2 style="text-align: center; margin-bottom: 15px;">CONFERÊNCIA DE VALORES</h2>
+                    <div style="margin-bottom: 10px;">
+                        <strong>PIX</strong>
+                        <div style="display: flex; justify-content: space-between;"><span>Sistema:</span><span>${formatarPreco(totaisPorPagamento.pix)}</span></div>
+                        <div style="display: flex; justify-content: space-between;"><span>Apurado:</span><span>${formatarPreco(apuradoPix)}</span></div>
+                        <div style="display: flex; justify-content: space-between;"><strong>Diferença:</strong><strong>${diferencaSpans.pix.textContent}</strong></div>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <strong>CRÉDITO</strong>
+                        <div style="display: flex; justify-content: space-between;"><span>Sistema:</span><span>${formatarPreco(totaisPorPagamento.credito)}</span></div>
+                        <div style="display: flex; justify-content: space-between;"><span>Apurado:</span><span>${formatarPreco(apuradoCredito)}</span></div>
+                        <div style="display: flex; justify-content: space-between;"><strong>Diferença:</strong><strong>${diferencaSpans.credito.textContent}</strong></div>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <strong>DÉBITO</strong>
+                        <div style="display: flex; justify-content: space-between;"><span>Sistema:</span><span>${formatarPreco(totaisPorPagamento.debito)}</span></div>
+                        <div style="display: flex; justify-content: space-between;"><span>Apurado:</span><span>${formatarPreco(apuradoDebito)}</span></div>
+                        <div style="display: flex; justify-content: space-between;"><strong>Diferença:</strong><strong>${diferencaSpans.debito.textContent}</strong></div>
+                    </div>
+                    <div>
+                        <strong>DINHEIRO</strong>
+                        <div style="display: flex; justify-content: space-between;"><span>Sistema (Vendas):</span><span>${formatarPreco(totaisPorPagamento.dinheiro)}</span></div>
+                        <div style="display: flex; justify-content: space-between;"><span>Apurado (Caixa):</span><span>${formatarPreco(apuradoDinheiro)}</span></div>
+                        <div style="display: flex; justify-content: space-between;"><strong>Diferença:</strong><strong>${diferencaSpans.dinheiro.textContent}</strong></div>
+                    </div>
+                </div>
+            `;
+
+            const printWindowHTML = `
+                <html>
+                <head>
+                    <title>Fechamento de Caixa - ${dataHora}</title>
+                    <style>
+                        body { font-family: 'Courier New', Courier, monospace; color: #000; width: 300px; font-size: 0.9em; }
+                        h1, h2, h3 { margin: 0; text-align: center; }
+                        h1 { font-size: 1.2em; margin-bottom: 5px; }
+                        h3 { font-size: 1em; text-align: left; border-bottom: none; margin-top: 10px; }
+                        .info { text-align: center; font-size: 0.8em; margin-bottom: 10px; }
+                        .total { display: flex; justify-content: space-between; font-weight: bold; font-size: 1.1em; border-top: 1px dashed #000; padding-top: 5px; margin-top: 5px; }
+                        .detalhe { display: flex; justify-content: space-between; }
+                    </style>
+                </head>
+                <body>
+                    <h1>UNIDADE SP</h1>
+                    <div class="info">
+                        FECHAMENTO CAIXA<br>
+                        Data: ${dataHora}<br>
+                        Operador: <strong>${loggedInUser.toUpperCase()}</strong>
+                    </div>
+                    <div class="total"><span>TOTAL DE ITENS:</span><span>${totalItens}</span></div>
+                    <div class="total" style="font-size: 1.2em;"><span>TOTAL DE VENDAS:</span><span>${formatarPreco(totalVendas)}</span></div>
+                    ${produtosPrintHTML}
+                    <div style="border-top: 1px dashed #000; padding-top: 10px; margin-top: 10px;">
+                        <h3>PAGAMENTOS (SISTEMA)</h3>
+                        <div class="detalhe"><span>PIX:</span><span>${formatarPreco(totaisPorPagamento.pix)}</span></div>
+                        <div class="detalhe"><span>CRÉDITO:</span><span>${formatarPreco(totaisPorPagamento.credito)}</span></div>
+                        <div class="detalhe"><span>DÉBITO:</span><span>${formatarPreco(totaisPorPagamento.debito)}</span></div>
+                        <div class="detalhe"><span>DINHEIRO (Vendas):</span><span>${formatarPreco(totaisPorPagamento.dinheiro)}</span></div>
+                         ${totaisPorPagamento.brinde > 0 ? `<div class="detalhe"><span>CORTESIAS:</span><span>${formatarPreco(totaisPorPagamento.brinde)}</span></div>` : ''}
+                    </div>
+                     <div style="border-top: 1px solid #000; margin-top: 10px; padding-top: 5px; font-size: 1.1em;">
+                        <div class="detalhe"><span>Troco Inicial:</span><span>${formatarPreco(trocoInicial)}</span></div>
+                        <div class="detalhe" style="font-weight: bold;"><span>DINHEIRO EM CAIXA:</span><span>${formatarPreco(totalDinheiroComTroco)}</span></div>
+                    </div>
+                    ${conferenciaHTML}
+                </body>
+                </html>
+            `;
+
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            document.body.appendChild(iframe);
             
-            const apuradoPix = parseCurrency(inputsApurados.pix.value);
-            const apuradoCredito = parseCurrency(inputsApurados.credito.value);
-            const apuradoDebito = parseCurrency(inputsApurados.debito.value);
-            const apuradoDinheiro = parseCurrency(inputsApurados.dinheiro.value);
+            const doc = iframe.contentWindow.document;
+            doc.open();
+            doc.write(printWindowHTML);
+            doc.close();
 
-            textoParaImpressao += linhaSeparadoraDupla;
-            textoParaImpressao += '     CONFERENCIA DE VALORES\\n';
-            textoParaImpressao += linhaSeparadoraDupla;
-
-            // Conferência PIX
-            textoParaImpressao += 'PIX\\n';
-            textoParaImpressao += alinharTexto('  Sistema:', formatarPreco(totaisPorPagamento.pix));
-            textoParaImpressao += alinharTexto('  Apurado:', formatarPreco(apuradoPix));
-            textoParaImpressao += alinharTexto('  Diferenca:', diferencaSpans.pix.textContent);
-            textoParaImpressao += '\\n';
-
-            // Conferência CRÉDITO
-            textoParaImpressao += 'CREDITO\\n';
-            textoParaImpressao += alinharTexto('  Sistema:', formatarPreco(totaisPorPagamento.credito));
-            textoParaImpressao += alinharTexto('  Apurado:', formatarPreco(apuradoCredito));
-            textoParaImpressao += alinharTexto('  Diferenca:', diferencaSpans.credito.textContent);
-            textoParaImpressao += '\\n';
-
-            // Conferência DÉBITO
-            textoParaImpressao += 'DEBITO\\n';
-            textoParaImpressao += alinharTexto('  Sistema:', formatarPreco(totaisPorPagamento.debito));
-            textoParaImpressao += alinharTexto('  Apurado:', formatarPreco(apuradoDebito));
-            textoParaImpressao += alinharTexto('  Diferenca:', diferencaSpans.debito.textContent);
-            textoParaImpressao += '\\n';
-
-            // Conferência DINHEIRO
-            textoParaImpressao += 'DINHEIRO\\n';
-            textoParaImpressao += alinharTexto('  Sistema:', formatarPreco(totaisPorPagamento.dinheiro));
-            textoParaImpressao += alinharTexto('  Apurado:', formatarPreco(apuradoDinheiro));
-            textoParaImpressao += alinharTexto('  Diferenca:', diferencaSpans.dinheiro.textContent);
-            textoParaImpressao += '\\n\\n\\n'; 
-
-            window.AndroidPrint.print(textoParaImpressao);
-        }
-
-        function imprimirFechamentoViaNavegador() {
-            window.print();
-        }
+            setTimeout(() => {
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+                document.body.removeChild(iframe);
+            }, 250);
+        });
 
     } catch (error) {
         console.error('Erro ao buscar ou processar vendas:', error);

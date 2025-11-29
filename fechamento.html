@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -40,42 +41,22 @@
             color: var(--red-error);
         }
 
-        /* --- NOVOS ESTILOS --- */
-
-        /* Oculta o resumo detalhado e a comparação de conferência na tela */
-        #resumo-content,
-        .conferencia-comparacao {
-            display: none;
-        }
-
-        /* Estilos específicos para impressão */
+        /* Estilos de Impressão */
         @media print {
-            body {
-                background-color: white; 
+            body * {
+                visibility: hidden;
             }
-
-            .pdv-header, #btn-imprimir {
-                display: none;
+            #printable-area, #printable-area * {
+                visibility: visible;
             }
-
-            /* Mostra os elementos ocultos na impressão */
-            #resumo-content {
-                display: block;
-            }
-
-            .conferencia-comparacao {
-                display: flex; /* Mantém o layout flexível na impressão */
-            }
-
-            .pdv-main, #fechamento-container {
+            #printable-area {
+                position: absolute;
+                left: 0;
+                top: 0;
                 width: 100%;
-                max-width: 100%;
-                padding: 0;
-                margin: 0;
-                box-shadow: none;
-                border: none;
             }
         }
+
     </style>
 </head>
 <body>
@@ -101,7 +82,7 @@
                 
                 <div class="conferencia-item">
                     <label for="apurado-pix">PIX (Apurado)</label>
-                    <input type="text" id="apurado-pix" class="conferencia-input" placeholder="0,00">
+                    <input type="number" id="apurado-pix" class="conferencia-input" placeholder="R$ 0,00">
                     <div class="conferencia-comparacao">
                         <span>Sistema: <span id="sistema-pix">R$ 0,00</span></span>
                         <span>Diferença: <span id="diferenca-pix" class="diferenca">R$ 0,00</span></span>
@@ -110,7 +91,7 @@
 
                 <div class="conferencia-item">
                     <label for="apurado-credito">CRÉDITO (Apurado)</label>
-                    <input type="text" id="apurado-credito" class="conferencia-input" placeholder="0,00">
+                    <input type="number" id="apurado-credito" class="conferencia-input" placeholder="R$ 0,00">
                     <div class="conferencia-comparacao">
                         <span>Sistema: <span id="sistema-credito">R$ 0,00</span></span>
                         <span>Diferença: <span id="diferenca-credito" class="diferenca">R$ 0,00</span></span>
@@ -119,7 +100,7 @@
 
                 <div class="conferencia-item">
                     <label for="apurado-debito">DÉBITO (Apurado)</label>
-                    <input type="text" id="apurado-debito" class="conferencia-input" placeholder="0,00">
+                    <input type="number" id="apurado-debito" class="conferencia-input" placeholder="R$ 0,00">
                     <div class="conferencia-comparacao">
                         <span>Sistema: <span id="sistema-debito">R$ 0,00</span></span>
                         <span>Diferença: <span id="diferenca-debito" class="diferenca">R$ 0,00</span></span>
@@ -128,7 +109,7 @@
 
                 <div class="conferencia-item">
                     <label for="apurado-dinheiro">DINHEIRO (Apurado)</label>
-                    <input type="text" id="apurado-dinheiro" class="conferencia-input" placeholder="0,00">
+                    <input type="number" id="apurado-dinheiro" class="conferencia-input" placeholder="R$ 0,00">
                     <div class="conferencia-comparacao">
                         <span>Sistema: <span id="sistema-dinheiro">R$ 0,00</span></span>
                         <span>Diferença: <span id="diferenca-dinheiro" class="diferenca">R$ 0,00</span></span>
