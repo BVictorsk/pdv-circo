@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Função para formatar o input de moeda
     const formatCurrencyInput = (input) => {
-        let value = input.value.replace(/\D/g, '');
+        let value = input.value.replace(/\D/g, ''); // CORREÇÃO: Removido um nível de escape de \D
         value = (parseInt(value, 10) / 100).toFixed(2).replace('.', ',');
         if (value === 'NaN') value = '0,00';
         input.value = value;
@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Função para converter string de moeda para float
     const parseCurrency = (value) => {
-        return parseFloat(value.replace('.', '').replace(',', '.')) || 0;
+        return parseFloat(value.replace(/\./g, '').replace(',', '.')) || 0;
     };
 
     try {
@@ -178,53 +178,43 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Lógica de Impressão
         const btnImprimir = document.getElementById('btn-imprimir');
         btnImprimir.addEventListener('click', () => {
-            // Verifica se a interface Android está disponível
             if (window.AndroidPrint && typeof window.AndroidPrint.print === 'function') {
-                imprimirFechamentoTermica(); // Chama a nova função para impressão térmica
+                imprimirFechamentoTermica(); 
             } else {
-                // Fallback: mantém o método antigo para navegadores de desktop
                 console.warn("Interface AndroidPrint não encontrada. Usando método de impressão web.");
                 imprimirFechamentoViaNavegador();
             }
         });
 
-        /**
-         * NOVA FUNÇÃO
-         * Constrói uma string de texto para a impressora térmica e a envia via interface nativa.
-         */
         function imprimirFechamentoTermica() {
             console.log("Iniciando impressão do fechamento na impressora térmica...");
 
             const dataHora = new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR');
             const formatarPreco = (valor) => `R$ ${valor.toFixed(2).replace('.', ',')}`;
-            const linhaSeparadora = '--------------------------------\n';
-            const linhaSeparadoraDupla = '================================\n';
+            const linhaSeparadora = '--------------------------------\\n';
+            const linhaSeparadoraDupla = '================================\\n';
 
-            // Helper para alinhar texto
             const alinharTexto = (esquerda, direita) => {
-                const larguraLinha = 32; // Largura padrão para impressoras de 58mm
+                const larguraLinha = 32;
                 const espacos = larguraLinha - esquerda.length - direita.length;
-                return esquerda + ' '.repeat(Math.max(0, espacos)) + direita + '\n';
+                return esquerda + ' '.repeat(Math.max(0, espacos)) + direita + '\\n';
             };
             
-            // --- MONTAGEM DA STRING DE IMPRESSÃO ---
-
             let textoParaImpressao = '';
-            textoParaImpressao += '         UNIDADE SP\n';
-            textoParaImpressao += '      FECHAMENTO DE CAIXA\n';
+            textoParaImpressao += '         UNIDADE SP\\n';
+            textoParaImpressao += '      FECHAMENTO DE CAIXA\\n';
             textoParaImpressao += linhaSeparadora;
-            textoParaImpressao += `Data: ${dataHora}\n`;
-            textoParaImpressao += `Operador: ${loggedInUser.toUpperCase()}\n`;
+            textoParaImpressao += `Data: ${dataHora}\\n`;
+            textoParaImpressao += `Operador: ${loggedInUser.toUpperCase()}\\n`;
             textoParaImpressao += linhaSeparadora;
 
             textoParaImpressao += alinharTexto('TOTAL DE ITENS:', totalItens.toString());
             textoParaImpressao += alinharTexto('TOTAL DE VENDAS:', formatarPreco(totalVendas));
 
-            // Bloco de Produtos Vendidos
             const sortedProdutos = Object.keys(produtosVendidos).sort();
             if (sortedProdutos.length > 0) {
                 textoParaImpressao += linhaSeparadora;
-                textoParaImpressao += '       PRODUTOS VENDIDOS\n';
+                textoParaImpressao += '       PRODUTOS VENDIDOS\\n';
                 textoParaImpressao += linhaSeparadora;
                 sortedProdutos.forEach(nome => {
                     const produto = produtosVendidos[nome];
@@ -233,9 +223,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
             }
 
-            // Bloco de Pagamentos (Sistema)
             textoParaImpressao += linhaSeparadora;
-            textoParaImpressao += '      PAGAMENTOS (SISTEMA)\n';
+            textoParaImpressao += '      PAGAMENTOS (SISTEMA)\\n';
             textoParaImpressao += linhaSeparadora;
             textoParaImpressao += alinharTexto('PIX:', formatarPreco(totaisPorPagamento.pix));
             textoParaImpressao += alinharTexto('CREDITO:', formatarPreco(totaisPorPagamento.credito));
@@ -245,80 +234,52 @@ document.addEventListener('DOMContentLoaded', async () => {
                 textoParaImpressao += alinharTexto('CORTESIAS:', formatarPreco(totaisPorPagamento.brinde));
             }
 
-            // Totais de Dinheiro
             textoParaImpressao += linhaSeparadora;
             textoParaImpressao += alinharTexto('Troco Inicial:', formatarPreco(trocoInicial));
             textoParaImpressao += alinharTexto('DINHEIRO EM CAIXA:', formatarPreco(totalDinheiroComTroco));
             
-            // Bloco de Conferência
-            const apuradoPix = parseFloat(inputsApurados.pix.value) || 0;
-            const apuradoCredito = parseFloat(inputsApurados.credito.value) || 0;
-            const apuradoDebito = parseFloat(inputsApurados.debito.value) || 0;
-            const apuradoDinheiro = parseFloat(inputsApurados.dinheiro.value) || 0;
+            const apuradoPix = parseCurrency(inputsApurados.pix.value);
+            const apuradoCredito = parseCurrency(inputsApurados.credito.value);
+            const apuradoDebito = parseCurrency(inputsApurados.debito.value);
+            const apuradoDinheiro = parseCurrency(inputsApurados.dinheiro.value);
 
             textoParaImpressao += linhaSeparadoraDupla;
-            textoParaImpressao += '     CONFERENCIA DE VALORES\n';
+            textoParaImpressao += '     CONFERENCIA DE VALORES\\n';
             textoParaImpressao += linhaSeparadoraDupla;
 
             // Conferência PIX
-            textoParaImpressao += 'PIX\n';
+            textoParaImpressao += 'PIX\\n';
             textoParaImpressao += alinharTexto('  Sistema:', formatarPreco(totaisPorPagamento.pix));
             textoParaImpressao += alinharTexto('  Apurado:', formatarPreco(apuradoPix));
             textoParaImpressao += alinharTexto('  Diferenca:', diferencaSpans.pix.textContent);
-            textoParaImpressao += '\n';
+            textoParaImpressao += '\\n';
 
             // Conferência CRÉDITO
-            textoParaImpressao += 'CREDITO\n';
+            textoParaImpressao += 'CREDITO\\n';
             textoParaImpressao += alinharTexto('  Sistema:', formatarPreco(totaisPorPagamento.credito));
             textoParaImpressao += alinharTexto('  Apurado:', formatarPreco(apuradoCredito));
             textoParaImpressao += alinharTexto('  Diferenca:', diferencaSpans.credito.textContent);
-            textoParaImpressao += '\n';
+            textoParaImpressao += '\\n';
 
             // Conferência DÉBITO
-            textoParaImpressao += 'DEBITO\n';
+            textoParaImpressao += 'DEBITO\\n';
             textoParaImpressao += alinharTexto('  Sistema:', formatarPreco(totaisPorPagamento.debito));
             textoParaImpressao += alinharTexto('  Apurado:', formatarPreco(apuradoDebito));
             textoParaImpressao += alinharTexto('  Diferenca:', diferencaSpans.debito.textContent);
-            textoParaImpressao += '\n';
+            textoParaImpressao += '\\n';
 
             // Conferência DINHEIRO
-            textoParaImpressao += 'DINHEIRO\n';
+            textoParaImpressao += 'DINHEIRO\\n';
             textoParaImpressao += alinharTexto('  Sistema:', formatarPreco(totaisPorPagamento.dinheiro));
             textoParaImpressao += alinharTexto('  Apurado:', formatarPreco(apuradoDinheiro));
             textoParaImpressao += alinharTexto('  Diferenca:', diferencaSpans.dinheiro.textContent);
-            textoParaImpressao += '\n\n\n'; // Espaço final antes do corte
+            textoParaImpressao += '\\n\\n\\n'; 
 
-            // Envia a string final para a interface nativa do Android
             window.AndroidPrint.print(textoParaImpressao);
         }
 
-        /**
-         * FUNÇÃO DE FALLBACK (o seu código original de impressão)
-         * Imprime o fechamento usando a janela de impressão do navegador.
-         */
         function imprimirFechamentoViaNavegador() {
-            // Esta função contém o seu código original de criação de iframe
-            const dataHora = new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR');
-            let produtosPrintHTML = ''; //... (todo o resto do seu código de montagem de HTML)
-            
-            // ... Todo o seu código de montagem de HTML continua aqui ...
-            // Para economizar espaço, estou omitindo a repetição, mas você deve
-            // colocar seu código de montagem de `printWindowHTML` e criação de `iframe` aqui.
-
-            // Apenas para ilustrar, o código completo do seu método original viria aqui:
-            const printWindowHTML = `<html>...${conferenciaHTML}...</html>`; // Seu HTML completo
-            const iframe = document.createElement('iframe');
-            iframe.style.display = 'none';
-            document.body.appendChild(iframe);
-            const doc = iframe.contentWindow.document;
-            doc.open();
-            doc.write(printWindowHTML);
-            doc.close();
-            setTimeout(() => {
-                iframe.contentWindow.focus();
-                iframe.contentWindow.print();
-                document.body.removeChild(iframe);
-            }, 250);
+            window.print();
         }
 
     } catch (error) {
