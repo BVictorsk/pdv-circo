@@ -16,7 +16,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     try {
-        // Pega a data de hoje no formato YYYY-MM-DD para o início e fim do dia
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const startOfDay = today;
@@ -25,9 +24,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         tomorrow.setDate(tomorrow.getDate() + 1);
         const endOfDay = tomorrow;
 
-        console.log(`Buscando vendas para o operador '${loggedInUser}' entre ${startOfDay.toLocaleString()} e ${endOfDay.toLocaleString()}`);
-
-        // Query no Firestore para buscar as vendas do dia para o operador logado
         const vendasSnapshot = await db.collection('vendas')
             .where('operador', '==', loggedInUser)
             .where('timestamp', '>=', startOfDay)
@@ -36,89 +32,71 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (vendasSnapshot.empty) {
             resumoContent.innerHTML = '<p>Nenhuma venda encontrada para hoje.</p>';
-            console.log('Nenhuma venda encontrada no snapshot.');
             return;
         }
 
-        // Inicializa os totais
         let totalVendas = 0;
         let totalItens = 0;
-        const totaisPorPagamento = {
-            pix: 0,
-            credito: 0,
-            debito: 0,
-            dinheiro: 0,
-            brinde: 0 // Para contar cortesias
-        };
+        const totaisPorPagamento = { pix: 0, credito: 0, debito: 0, dinheiro: 0, brinde: 0 };
         const produtosVendidos = {};
 
         vendasSnapshot.forEach(doc => {
             const venda = doc.data();
-            
-            // Somar valor total da venda (apenas se não for brinde)
+
             if (venda.tipo !== 'BRINDE') {
                 totalVendas += venda.valorTotal || 0;
             }
-            
-            // Somar a quantidade de itens e agregar produtos
+
             if (venda.itens && Array.isArray(venda.itens)) {
                 venda.itens.forEach(item => {
-                    totalItens += item.quantidade || 0;
-                    const nome = item.nome;
-                    const valor = item.valor || 0;
                     const quantidade = item.quantidade || 0;
+                    totalItens += quantidade;
+                    
+                    const nome = item.nome;
+                    const preco = item.preco || 0; // Correção: usar item.preco
 
                     if (produtosVendidos[nome]) {
                         produtosVendidos[nome].quantidade += quantidade;
-                        produtosVendidos[nome].valorTotal += valor * quantidade;
+                        produtosVendidos[nome].valorTotal += preco * quantidade;
                     } else {
                         produtosVendidos[nome] = {
                             quantidade: quantidade,
-                            valorTotal: valor * quantidade
+                            valorTotal: preco * quantidade
                         };
                     }
                 });
             }
 
-            // Somar os valores por tipo de pagamento
             if (venda.pagamentos && Array.isArray(venda.pagamentos)) {
                 venda.pagamentos.forEach(pagamento => {
                     const tipo = pagamento.tipo.toLowerCase();
                     const valor = pagamento.valor || 0;
-
-                    if (tipo.includes('pix')) {
-                        totaisPorPagamento.pix += valor;
-                    } else if (tipo.includes('credito')) {
-                        totaisPorPagamento.credito += valor;
-                    } else if (tipo.includes('debito')) {
-                        totaisPorPagamento.debito += valor;
-                    } else if (tipo.includes('dinheiro')) {
-                        totaisPorPagamento.dinheiro += valor;
-                    } else if (tipo.includes('brinde')) {
-                        totaisPorPagamento.brinde += valor;
-                    }
+                    if (tipo.includes('pix')) totaisPorPagamento.pix += valor;
+                    else if (tipo.includes('credito')) totaisPorPagamento.credito += valor;
+                    else if (tipo.includes('debito')) totaisPorPagamento.debito += valor;
+                    else if (tipo.includes('dinheiro')) totaisPorPagamento.dinheiro += valor;
+                    else if (tipo.includes('brinde')) totaisPorPagamento.brinde += valor;
                 });
             }
         });
 
         const trocoInicial = parseFloat(sessionStorage.getItem('trocoInicial') || '0');
         const totalDinheiroComTroco = totaisPorPagamento.dinheiro + trocoInicial;
-
-        // --- Renderização do Resumo ---
-
         const formatarPreco = (valor) => `R$ ${valor.toFixed(2).replace('.', ',')}`;
 
-        let produtosHTML = '<h3 style="text-align: center; margin-bottom: 20px; margin-top: 25px; border-top: 1px dashed var(--border-color); padding-top: 15px;">PRODUTOS VENDIDOS</h3>';
-        for (const nome in produtosVendidos) {
-            const produto = produtosVendidos[nome];
-            produtosHTML += `
-                <div class="carrinho-total">
-                    <span>${produto.quantidade}x ${nome}</span>
-                    <span class="valor">${formatarPreco(produto.valorTotal)}</span>
-                </div>
-            `;
-        }
-
+        const produtosHTML = Object.keys(produtosVendidos).length > 0 ?
+            `<div class="fechamento-detalhes" style="margin-top: 25px; border-top: 1px dashed var(--border-color); padding-top: 15px;">
+                <h3 style="text-align: center; margin-bottom: 20px;">PRODUTOS VENDIDOS</h3>
+                ${Object.keys(produtosVendidos).sort().map(nome => {
+                    const produto = produtosVendidos[nome];
+                    return `
+                        <div class="carrinho-total">
+                            <span>${produto.quantidade}x ${nome}</span>
+                            <span class="valor">${formatarPreco(produto.valorTotal)}</span>
+                        </div>
+                    `;
+                }).join('')}
+            </div>` : '';
 
         resumoContent.innerHTML = `
             <div class="fechamento-info" style="margin-bottom: 20px; text-align: center; font-size: 0.9em; color: var(--text-muted);">
@@ -142,41 +120,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             <div class="fechamento-detalhes" style="margin-top: 25px; border-top: 1px dashed var(--border-color); padding-top: 15px;">
                 <h3 style="text-align: center; margin-bottom: 20px;">DETALHES POR PAGAMENTO</h3>
-                
-                <div class="carrinho-total">
-                    <span>PIX:</span>
-                    <span class="valor">${formatarPreco(totaisPorPagamento.pix)}</span>
-                </div>
-                <div class="carrinho-total">
-                    <span>CRÉDITO:</span>
-                    <span class="valor">${formatarPreco(totaisPorPagamento.credito)}</span>
-                </div>
-                <div class="carrinho-total">
-                    <span>DÉBITO:</span>
-                    <span class="valor">${formatarPreco(totaisPorPagamento.debito)}</span>
-                </div>
-                <div class="carrinho-total">
-                    <span>DINHEIRO (Vendas):</span>
-                    <span class="valor">${formatarPreco(totaisPorPagamento.dinheiro)}</span>
-                </div>
+                <div class="carrinho-total"><span>PIX:</span><span class="valor">${formatarPreco(totaisPorPagamento.pix)}</span></div>
+                <div class="carrinho-total"><span>CRÉDITO:</span><span class="valor">${formatarPreco(totaisPorPagamento.credito)}</span></div>
+                <div class="carrinho-total"><span>DÉBITO:</span><span class="valor">${formatarPreco(totaisPorPagamento.debito)}</span></div>
+                <div class="carrinho-total"><span>DINHEiro (Vendas):</span><span class="valor">${formatarPreco(totaisPorPagamento.dinheiro)}</span></div>
+                ${totaisPorPagamento.brinde > 0 ? `<div class="carrinho-total" style="color: var(--blue-info);"><span>CORTESIAS (Brindes):</span><span class="valor">${formatarPreco(totaisPorPagamento.brinde)}</span></div>` : ''}
+            </div>
 
-                ${totaisPorPagamento.brinde > 0 ? `
-                <div class="carrinho-total" style="color: var(--blue-info);">
-                    <span>CORTESIAS (Brindes):</span>
-                    <span class="valor">${formatarPreco(totaisPorPagamento.brinde)}</span>
-                </div>` : ''}
-
-                 <div style="border-top: 1px solid var(--border-color); margin: 15px 0;"></div>
-
-                <div class="carrinho-total" style="font-size: 1.1em;">
-                    <span>Troco Inicial:</span>
-                    <span class="valor">${formatarPreco(trocoInicial)}</span>
-                </div>
-                <div class="carrinho-total" style="font-size: 1.2em; font-weight: bold;">
-                    <span>DINHEIRO EM CAIXA:</span>
-                    <span class="valor">${formatarPreco(totalDinheiroComTroco)}</span>
-                </div>
-
+            <div style="border-top: 1px solid var(--border-color); margin: 15px 0; padding-top: 15px;">
+                <div class="carrinho-total" style="font-size: 1.1em;"><span>Troco Inicial:</span><span class="valor">${formatarPreco(trocoInicial)}</span></div>
+                <div class="carrinho-total" style="font-size: 1.2em; font-weight: bold;"><span>DINHEIRO EM CAIXA:</span><span class="valor">${formatarPreco(totalDinheiroComTroco)}</span></div>
             </div>
 
             <div style="text-align: center; margin-top: 30px;">
