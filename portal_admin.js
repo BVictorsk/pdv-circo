@@ -21,11 +21,75 @@ function openTab(evt, tabName) {
     } else if (tabName === 'Usuarios') {
         carregarUsuarios();
         resetFormularioUsuario();
+    } else if (tabName === 'Vendas') {
+        carregarVendas();
     }
 }
 
 let editingProductId = null;
 let editingUserId = null;
+
+// --- Funções de Vendas ---
+async function carregarVendas() {
+    const vendasContainer = document.getElementById("vendas-container");
+    const mensagemNenhumaVenda = document.getElementById("mensagem-nenhuma-venda");
+    if (!vendasContainer || !mensagemNenhumaVenda) return;
+
+    vendasContainer.innerHTML = "";
+    mensagemNenhumaVenda.style.display = "none";
+
+    if (typeof db === 'undefined' || db === null) {
+        console.error("Firestore 'db' is not available.");
+        return;
+    }
+
+    try {
+        const snapshot = await db.collection("vendas").orderBy("timestamp", "desc").get();
+        if (snapshot.empty) {
+            mensagemNenhumaVenda.style.display = "block";
+            return;
+        }
+
+        snapshot.forEach(doc => {
+            const venda = { id: doc.id, ...doc.data() };
+            const card = document.createElement("div");
+            card.className = "produto-card"; // Reutilizando a classe de card
+
+            const formatarPreco = (valor) => `R$ ${valor.toFixed(2).replace('.', ',')}`;
+            const dataVenda = venda.timestamp.toDate().toLocaleString('pt-BR');
+
+            const itensHTML = venda.itens.map(item => 
+                `<li>${item.quantidade}x ${item.nome} (${formatarPreco(item.preco)})</li>`
+            ).join('');
+
+            const pagamentosHTML = venda.pagamentos.map(pag => 
+                `<li>${pag.tipo}: ${formatarPreco(pag.valor)}</li>`
+            ).join('');
+
+            card.innerHTML = `
+                <div class="card-header">
+                    <div class="product-title-group">
+                        <div class="nome">Venda #${venda.id.substring(0, 6)}...</div>
+                        <div class="product-id-display">Operador: <strong>${venda.operador}</strong></div>
+                    </div>
+                    <div class="card-buttons">
+                       <span style="font-size: 0.8em; color: var(--text-muted);">${dataVenda}</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="preco" style="margin-bottom: 10px;">Total: ${formatarPreco(venda.valorTotal)}</div>
+                    <div class="setor" style="margin-bottom: 5px;"><strong>Itens:</strong></div>
+                    <ul style="margin: 0; padding-left: 20px; font-size: 0.9em;">${itensHTML}</ul>
+                    <div class="setor" style="margin-top: 10px; margin-bottom: 5px;"><strong>Pagamentos:</strong></div>
+                     <ul style="margin: 0; padding-left: 20px; font-size: 0.9em;">${pagamentosHTML}</ul>
+                </div>`;
+            vendasContainer.appendChild(card);
+        });
+    } catch (error) {
+        console.error("Erro ao carregar vendas: ", error);
+    }
+}
+
 
 // Carrega e exibe os produtos do Firestore
 async function carregarProdutos() {
