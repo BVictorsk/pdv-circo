@@ -17,46 +17,66 @@ function imprimirRecibo(vendaId, carrinho, valorTotal, pagamentosEfetuados, troc
     const dataFormatada = `${data.toLocaleDateString('pt-BR')} ${data.toLocaleTimeString('pt-BR')}`;
     const operador = loggedInUser || 'N/A';
 
-    // 1. Tentar imprimir via interface AndroidPrint (o método principal)
     if (window.AndroidPrint && typeof window.AndroidPrint.print === 'function') {
-        console.log("Modo de impressão 'Quermesse' ativado. Imprimindo cada item separadamente.");
-
-        // --- LÓGICA PRINCIPAL MODIFICADA ---
-        // Itera sobre cada item no carrinho.
         carrinho.forEach(item => {
-            // A 'quantidade' de um item determina quantas vezes ele deve ser impresso.
             for (let i = 0; i < item.quantidade; i++) {
-                
-                // Monta o texto de impressão para UM ÚNICO item.
                 let dadosParaImpressao = '';
                 dadosParaImpressao += `        PATATI PATATA PDV\n`;
                 dadosParaImpressao += `--------------------------------\n`;
-                dadosParaImpressao += `            ${item.nome.toUpperCase()}\n`; // Nome do item em destaque
+                dadosParaImpressao += `            ${item.nome.toUpperCase()}\n`;
                 dadosParaImpressao += `--------------------------------\n`;
-                dadosParaImpressao += `Venda: #${vendaId.substring(0, 6)}\n`; // ID da venda para referência
+                dadosParaImpressao += `Venda: #${vendaId.substring(0, 6)}\n`;
                 dadosParaImpressao += `Data: ${dataFormatada}\n`;
                 dadosParaImpressao += `Operador: ${operador}\n`;
-                
-                // Comando de corte para separar este cupom.
                 dadosParaImpressao += `  <cut>\n`; 
-
-                // Envia este cupom individual para a impressão no Android.
-                console.log(`Enviando para impressão: 1x ${item.nome}`);
                 window.AndroidPrint.print(dadosParaImpressao);
             }
         });
-        
     } else {
-        // 2. Fallback para impressão via navegador (se a interface Android não for encontrada)
-        // Este modo continua imprimindo um recibo único, pois a impressão web não suporta múltiplos cortes.
         console.warn("Interface AndroidPrint não encontrada. Imprimindo um recibo consolidado via navegador.");
         imprimirViaNavegador(vendaId, carrinho, valorTotal, pagamentosEfetuados, trocoNecessario, formatarPreco, operador, dataFormatada);
     }
 }
 
 /**
+ * **NOVA FUNÇÃO**
+ * Imprime as fichas apenas para os itens adicionados ou alterados em uma troca.
+ * @param {Array} itensParaImprimir - A lista de itens (com a quantidade da *diferença*) a ser impressa.
+ * @param {string} vendaId - O ID da venda original para referência.
+ */
+function imprimirFichas(itensParaImprimir, vendaId) {
+    const data = new Date();
+    const dataFormatada = `${data.toLocaleDateString('pt-BR')} ${data.toLocaleTimeString('pt-BR')}`;
+    const loggedInUser = sessionStorage.getItem('loggedInUser') || 'N/A'; // Pega o usuário da sessão
+
+    if (window.AndroidPrint && typeof window.AndroidPrint.print === 'function') {
+        console.log("Imprimindo fichas da troca.");
+
+        itensParaImprimir.forEach(item => {
+            for (let i = 0; i < item.quantidade; i++) {
+                let dadosParaImpressao = '';
+                dadosParaImpressao += `        PATATI PATATA PDV\n`;
+                dadosParaImpressao += `--------------------------------\n`;
+                dadosParaImpressao += `            ${item.nome.toUpperCase()}\n`;
+                dadosParaImpressao += `--------------------------------\n`;
+                dadosParaImpressao += `Venda de Origem: #${vendaId.substring(0, 6)}\n`; // Referência à venda original
+                dadosParaImpressao += `Data da Troca: ${dataFormatada}\n`;
+                dadosParaImpressao += `Operador: ${loggedInUser}\n`;
+                dadosParaImpressao += `  <cut>\n`;
+
+                console.log(`Imprimindo ficha de troca: 1x ${item.nome}`);
+                window.AndroidPrint.print(dadosParaImpressao);
+            }
+        });
+    } else {
+        console.warn("Interface AndroidPrint não encontrada. A impressão de fichas de troca não pode continuar via navegador.");
+        alert("A função de impressão de fichas só está disponível no ambiente do aplicativo Android.");
+    }
+}
+
+
+/**
  * Função de fallback para imprimir um recibo consolidado na web.
- * (Esta é a sua lógica de impressão web original, isolada em uma função).
  */
 function imprimirViaNavegador(vendaId, carrinho, valorTotal, pagamentosEfetuados, trocoNecessario, formatarPreco, operador, dataFormatada) {
     let itensReciboHTML = carrinho.map(item => `

@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             vendaCard.innerHTML = `
                 <div class="card-header">
-                    <h3>Venda ID: ${venda.id.substring(0, 8)}...</h3>
+                    <h3>ID: ${venda.id.substring(0, 8)}...</h3>
                     <span class="data">${formatarData(venda.timestamp)}</span>
                 </div>
                 <div class="card-body">

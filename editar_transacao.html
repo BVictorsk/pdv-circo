@@ -10,6 +10,11 @@
         /* Estilos adicionais para a página de edição */
         .edit-container {
             display: flex;
+            flex-direction: column; /* Empilhar verticalmente */
+            gap: 20px;
+        }
+        .panels-container {
+            display: flex;
             gap: 30px;
         }
         .venda-atual-panel, .catalogo-panel {
@@ -18,13 +23,39 @@
             border-radius: 12px;
             padding: 25px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            flex: 1; /* Ocupar espaço igualmente */
         }
-        .venda-atual-panel {
-            width: 50%;
+        .valores-panel {
+            background-color: var(--card-background);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
-        .catalogo-panel {
-            width: 50%;
+        .valores-panel h3 {
+            margin-top: 0;
         }
+        .valores-display {
+            display: flex;
+            justify-content: space-around;
+            gap: 20px;
+            text-align: center;
+        }
+        .valor-box {
+            padding: 10px 15px;
+            border-radius: 8px;
+            flex: 1;
+        }
+        .valor-box strong {
+            font-size: 1.4em;
+            display: block;
+        }
+        .valor-original { background-color: #e3f2fd; }
+        .novo-valor { background-color: #e8f5e9; }
+        .diferenca-valor { background-color: #fff3e0; }
+        .diferenca-positiva { color: #c62828; } /* Vermelho para valor a pagar */
+        .diferenca-negativa { color: #2e7d32; } /* Verde para troco */
+
         .item-edicao {
             display: flex;
             justify-content: space-between;
@@ -79,20 +110,35 @@
         </div>
 
         <div class="edit-container">
-            <!-- Painel da Venda Atual -->
-            <div class="venda-atual-panel">
-                <h3>Itens da Venda</h3>
-                <div id="itens-venda-container">
-                    <!-- Itens da venda para edição serão carregados aqui -->
+            <!-- PAINEL DE VALORES -->
+            <div class="valores-panel">
+                <h3>Cálculo da Troca</h3>
+                <div class="valores-display">
+                    <div class="valor-box valor-original">
+                        <span>Valor Original</span>
+                        <strong id="valor-original-display">R$ 0,00</strong>
+                    </div>
+                    <div class="valor-box novo-valor">
+                        <span>Novo Valor</span>
+                        <strong id="novo-valor-display">R$ 0,00</strong>
+                    </div>
+                    <div class="valor-box diferenca-valor">
+                        <span>Diferença</span>
+                        <strong id="diferenca-display">R$ 0,00</strong>
+                    </div>
                 </div>
             </div>
 
-            <!-- Painel do Catálogo de Produtos -->
-            <div class="catalogo-panel">
-                <h3>Adicionar Itens do Catálogo</h3>
-                <input type="text" id="search-catalogo" placeholder="Buscar produto...">
-                <div id="catalogo-produtos-container">
-                    <!-- Lista de produtos do catálogo será carregada aqui -->
+            <!-- Painel de Itens e Catálogo -->
+            <div class="panels-container">
+                <div class="venda-atual-panel">
+                    <h3>Itens da Troca</h3>
+                    <div id="itens-venda-container"></div>
+                </div>
+                <div class="catalogo-panel">
+                    <h3>Adicionar Itens do Catálogo</h3>
+                    <input type="text" id="search-catalogo" placeholder="Buscar produto...">
+                    <div id="catalogo-produtos-container"></div>
                 </div>
             </div>
         </div>
@@ -106,6 +152,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js"></script>
+    <script src="print.js"></script> <!-- SCRIPT DE IMPRESSÃO ADICIONADO -->
     <script src="editar_transacao.js"></script>
 </body>
 </html>
