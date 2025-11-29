@@ -42,28 +42,31 @@
 
         /* --- NOVOS ESTILOS --- */
 
-        /* Oculta o resumo detalhado (total de itens, vendas, pagamentos) na visualização de tela normal */
-        #resumo-content {
+        /* Oculta o resumo detalhado e a comparação de conferência na tela */
+        #resumo-content,
+        .conferencia-comparacao {
             display: none;
         }
 
         /* Estilos específicos para impressão */
         @media print {
             body {
-                background-color: white; /* Garante fundo branco na impressão */
+                background-color: white; 
             }
 
-            /* Esconde elementos desnecessários na impressão, como o cabeçalho e o botão de imprimir */
             .pdv-header, #btn-imprimir {
                 display: none;
             }
 
-            /* Mostra o resumo detalhado que estava oculto na tela */
+            /* Mostra os elementos ocultos na impressão */
             #resumo-content {
                 display: block;
             }
 
-            /* Garante que o container principal e o de conferência ocupem o espaço necessário */
+            .conferencia-comparacao {
+                display: flex; /* Mantém o layout flexível na impressão */
+            }
+
             .pdv-main, #fechamento-container {
                 width: 100%;
                 max-width: 100%;
