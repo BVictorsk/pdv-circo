@@ -80,7 +80,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function calcularItensImpressaoTroca() {
-        // ... (lógica existente)
+        const itensImpressao = [];
+        const mapaItensEdicao = new Map(itensEdicao.map(item => [item.id, item.quantidade]));
+        const mapaItensOriginais = new Map(itensOriginais.map(item => [item.id, item.quantidade]));
+        const todosOsIds = new Set([...mapaItensEdicao.keys(), ...mapaItensOriginais.keys()]);
+
+        todosOsIds.forEach(id => {
+            const qtdEdicao = mapaItensEdicao.get(id) || 0;
+            const qtdOriginal = mapaItensOriginais.get(id) || 0;
+            const diferencaQtd = qtdEdicao - qtdOriginal;
+
+            if (diferencaQtd !== 0) {
+                const itemInfo = itensEdicao.find(item => item.id === id) || itensOriginais.find(item => item.id === id);
+                if (itemInfo) {
+                    itensImpressao.push({ 
+                        nome: itemInfo.nome,
+                        quantidade: diferencaQtd,
+                        preco: itemInfo.preco
+                    });
+                }
+            }
+        });
+        return itensImpressao;
     }
 
     function abrirModalPagamento(diferenca) {
@@ -110,7 +131,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                  const pago = parseFloat(valorPagoInput.value) || 0;
                  if(pago >= diferenca){
                     pagamentosDaDiferenca.push({ forma: 'Dinheiro', valor: diferenca });
-                    finalizarEdicao(diferenca < 0 ? Math.abs(diferenca) : 0, pago-diferenca);
+                    finalizarEdicao(0, pago-diferenca);
                     fecharModalPagamento();
                  } else {
                      alert("Valor pago é insuficiente!");
@@ -118,7 +139,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             };
         } else {
             pagamentosDaDiferenca.push({ forma: tipo, valor: diferenca });
-            finalizarEdicao(diferenca < 0 ? Math.abs(diferenca) : 0, 0);
+            finalizarEdicao(0, 0);
             fecharModalPagamento();
         }
     }
@@ -138,6 +159,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         btnSalvar.disabled = true;
         btnSalvar.textContent = 'Salvando...';
         const novoTotal = itensEdicao.reduce((acc, item) => acc + (item.preco * item.quantidade), 0);
+        
+        const itensParaImprimir = calcularItensImpressaoTroca();
 
         try {
             await db.collection("vendas").doc(vendaId).update({
@@ -145,19 +168,23 @@ document.addEventListener('DOMContentLoaded', async () => {
                 valorTotal: novoTotal,
                 valorOriginalTroca: valorOriginalDaCompra,
                 itensAnteriores: itensOriginais,
-                pagamentosDiferenca: pagamentosDaDiferenca, // Salva o pagamento da diferença
+                pagamentosDiferenca: pagamentosDaDiferenca,
                 ultimaAtualizacao: firebase.firestore.FieldValue.serverTimestamp()
             });
 
             btnSalvar.textContent = 'Salvo com Sucesso';
 
-            // Impressão
-            const itensParaImprimir = calcularItensImpressaoTroca();
             if (itensParaImprimir.length > 0 && typeof imprimirRecibo !== 'undefined') {
                 const diferencaCalculada = novoTotal - valorOriginalDaCompra;
+                const carrinhoImpressao = itensParaImprimir.map(item => ({
+                    nome: `${item.nome}`,
+                    quantidade: item.quantidade,
+                    precoUnitario: item.preco,
+                }));
+
                  imprimirRecibo(
                     `${vendaId}-TROCA-${Date.now()}`,
-                    // ... (carrinho para impressão)
+                    carrinhoImpressao,
                     diferencaCalculada > 0 ? diferencaCalculada : 0,
                     pagamentosDaDiferenca,
                     trocoPagamentoDiferenca > 0 ? trocoPagamentoDiferenca : troco,
@@ -166,17 +193,58 @@ document.addEventListener('DOMContentLoaded', async () => {
                     "COMPROVANTE DE TROCA"
                 );
             }
-            // setTimeout(() => window.location.href = 'minhas_transacoes.html', 1000);
+
+             setTimeout(() => {
+                window.location.href = 'minhas_transacoes.html';
+            }, 1000);
 
         } catch (error) {
             console.error("Erro ao salvar as alterações:", error);
-            alert('Ocorreu um erro ao salvar a troca.');
+            alert(`Ocorreu um erro ao salvar a troca: ${error.message}`)
             btnSalvar.disabled = false;
             btnSalvar.textContent = 'Salvar Alterações';
         }
     }
 
     // --- EVENT LISTENERS ---
+    itensVendaContainer.addEventListener('change', (e) => {
+        if (e.target.classList.contains('item-qty-input')) {
+            const index = parseInt(e.target.dataset.index, 10);
+            const novaQuantidade = parseInt(e.target.value, 10);
+            if (!isNaN(novaQuantidade) && novaQuantidade > 0) {
+                itensEdicao[index].quantidade = novaQuantidade;
+            } else {
+                itensEdicao.splice(index, 1);
+            }
+            renderItensVenda();
+        }
+    });
+
+    itensVendaContainer.addEventListener('click', (e) => {
+        if (e.target.classList.contains('btn-remover-item')) {
+            const index = parseInt(e.target.dataset.index);
+            itensEdicao.splice(index, 1);
+            renderItensVenda();
+        }
+    });
+
+    catalogoProdutosContainer.addEventListener('click', (e) => {
+        if (e.target.classList.contains('btn-adicionar-item')) {
+            const produtoId = e.target.dataset.id;
+            const produtoToAdd = catalogoProdutos.find(p => p.id === produtoId);
+            if (produtoToAdd) {
+                const itemExistente = itensEdicao.find(item => item.id === produtoId);
+                if (itemExistente) {
+                    itemExistente.quantidade++;
+                } else {
+                    itensEdicao.push({ ...produtoToAdd, quantidade: 1 });
+                }
+                renderItensVenda();
+            }
+        }
+    });
+
+    searchCatalogoInput.addEventListener('input', (e) => renderCatalogo(e.target.value));
     btnSalvar.addEventListener('click', handleSaveChanges);
     closeModalButton.addEventListener('click', fecharModalPagamento);
     opcoesPagamentoContainer.addEventListener('click', (e) => {
@@ -184,11 +252,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             processarPagamento(e.target.dataset.tipo);
         }
     });
-    // ... (outros listeners)
 
     // --- INITIALIZATION ---
     async function initialize() {
-        // ... (lógica de inicialização existente)
         if (userDisplay && loggedInUser) userDisplay.textContent = loggedInUser;
         if (!vendaId) {
             document.querySelector('.admin-main').innerHTML = '<p>Erro: Sessão inválida.</p>';
