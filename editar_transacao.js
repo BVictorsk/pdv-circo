@@ -39,6 +39,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function renderItensVenda() {
         itensVendaContainer.innerHTML = '';
+        if (!itensEdicao || itensEdicao.length === 0) {
+            itensVendaContainer.innerHTML = '<p>Nenhum item selecionado para a troca.</p>';
+        }
         itensEdicao.forEach((item, index) => {
             const itemEl = document.createElement('div');
             itemEl.className = 'item-edicao';
@@ -93,7 +96,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (diferencaQtd !== 0) {
                 const itemInfo = itensEdicao.find(item => item.id === id) || itensOriginais.find(item => item.id === id);
                 if (itemInfo) {
-                    itensImpressao.push({ 
+                    itensImpressao.push({
                         nome: itemInfo.nome,
                         quantidade: diferencaQtd,
                         preco: itemInfo.preco
@@ -128,14 +131,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                 trocoDiferencaDisplay.textContent = formatarPreco(troco > 0 ? troco : 0);
             };
             btnConfirmarDinheiro.onclick = () => {
-                 const pago = parseFloat(valorPagoInput.value) || 0;
-                 if(pago >= diferenca){
+                const pago = parseFloat(valorPagoInput.value) || 0;
+                if (pago >= diferenca) {
                     pagamentosDaDiferenca.push({ forma: 'Dinheiro', valor: diferenca });
-                    finalizarEdicao(0, pago-diferenca);
+                    finalizarEdicao(0, pago - diferenca);
                     fecharModalPagamento();
-                 } else {
-                     alert("Valor pago é insuficiente!");
-                 }
+                } else {
+                    alert("Valor pago é insuficiente!");
+                }
             };
         } else {
             pagamentosDaDiferenca.push({ forma: tipo, valor: diferenca });
@@ -159,7 +162,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         btnSalvar.disabled = true;
         btnSalvar.textContent = 'Salvando...';
         const novoTotal = itensEdicao.reduce((acc, item) => acc + (item.preco * item.quantidade), 0);
-        
+
         const itensParaImprimir = calcularItensImpressaoTroca();
 
         try {
@@ -173,6 +176,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
 
             btnSalvar.textContent = 'Salvo com Sucesso';
+            btnSalvar.disabled = true; 
+
+            const backLink = document.createElement('a');
+            backLink.href = 'minhas_transacoes.html';
+            backLink.textContent = 'Voltar para Minhas Transações';
+            backLink.className = 'btn-header'; 
+            document.querySelector('.btn-salvar-cancelar-container').appendChild(backLink);
+
 
             if (itensParaImprimir.length > 0 && typeof imprimirRecibo !== 'undefined') {
                 const diferencaCalculada = novoTotal - valorOriginalDaCompra;
@@ -182,7 +193,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     precoUnitario: item.preco,
                 }));
 
-                 imprimirRecibo(
+                imprimirRecibo(
                     `${vendaId}-TROCA-${Date.now()}`,
                     carrinhoImpressao,
                     diferencaCalculada > 0 ? diferencaCalculada : 0,
@@ -194,13 +205,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 );
             }
 
-             setTimeout(() => {
-                window.location.href = 'minhas_transacoes.html';
-            }, 1000);
-
         } catch (error) {
             console.error("Erro ao salvar as alterações:", error);
-            alert(`Ocorreu um erro ao salvar a troca: ${error.message}`)
+            alert(`Ocorreu um erro ao salvar a troca: ${error.message}`);
             btnSalvar.disabled = false;
             btnSalvar.textContent = 'Salvar Alterações';
         }
