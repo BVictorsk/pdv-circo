@@ -20,9 +20,9 @@ function imprimirRecibo(vendaId, carrinho, valorTotal, pagamentosEfetuados, troc
     const operador = loggedInUser || 'N/A';
 
     if (window.AndroidPrint && typeof window.AndroidPrint.print === 'function') {
-        console.log("Modo 'Quermesse'. Montando cupons individuais.");
+        console.log("Modo 'Quermesse'. Enviando cupons individuais.");
 
-        // 1. Monta o bloco de informações financeiras UMA VEZ.
+        // 1. Monta o bloco de informações financeiras UMA VEZ para reutilização.
         let textoFinanceiro = `--------------------------------\n`;
         textoFinanceiro += `TOTAL: ${formatarPreco(valorTotal)}\n`;
         if (Array.isArray(pagamentosEfetuados)) {
@@ -35,10 +35,7 @@ function imprimirRecibo(vendaId, carrinho, valorTotal, pagamentosEfetuados, troc
         }
         textoFinanceiro += `--------------------------------\n`;
 
-        // 2. String que vai concatenar todos os cupons.
-        let dadosCompletosParaImpressao = '';
-
-        // 3. Itera sobre cada item para criar seu cupom.
+        // 2. Itera sobre cada item para criar e imprimir seu cupom individualmente.
         carrinho.forEach(item => {
             for (let i = 0; i < item.quantidade; i++) {
                 let cupomIndividual = '';
@@ -48,26 +45,21 @@ function imprimirRecibo(vendaId, carrinho, valorTotal, pagamentosEfetuados, troc
                 cupomIndividual += `  (1x ${formatarPreco(item.preco)})\n`;
                 cupomIndividual += `--------------------------------\n`;
                 
-                // --- INFORMAÇÕES CORRIGIDAS ---
-                cupomIndividual += `Venda: #${vendaId}\n`; // <-- USA O ID COMPLETO
+                // --- INFORMAÇÕES ADICIONAIS ---
+                cupomIndividual += `Venda: #${vendaId}\n`;
                 cupomIndividual += `Data: ${dataFormatada}\n`;
                 cupomIndividual += `Operador: ${operador}\n`;
                 
-                // Adiciona o bloco financeiro inteiro
+                // Adiciona o bloco financeiro
                 cupomIndividual += textoFinanceiro;
                 
-                cupomIndividual += `Obrigado!\n\n`;
+                cupomIndividual += `Obrigado!\n\n\n`; // Adicione mais espaço se necessário antes do corte
 
-                // Adiciona o marcador de corte ao final de cada cupom
-                cupomIndividual += `<cut>\n`; 
-
-                dadosCompletosParaImpressao += cupomIndividual;
+                // Envia este cupom específico para o Android. O corte será tratado no lado nativo.
+                console.log(`Enviando para impressão: 1x ${item.nome}`);
+                window.AndroidPrint.print(cupomIndividual);
             }
         });
-
-        // 4. Envia a string gigante com todos os cupons para o Android de uma só vez.
-        console.log("Enviando bloco de impressão para o Android.");
-        window.AndroidPrint.print(dadosCompletosParaImpressao);
 
     } else {
         console.warn("Interface AndroidPrint não encontrada. Imprimindo um recibo consolidado via navegador.");
