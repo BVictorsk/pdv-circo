@@ -50,6 +50,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             dinheiro: 0,
             brinde: 0 // Para contar cortesias
         };
+        const produtosVendidos = {};
 
         vendasSnapshot.forEach(doc => {
             const venda = doc.data();
@@ -59,9 +60,24 @@ document.addEventListener('DOMContentLoaded', async () => {
                 totalVendas += venda.valorTotal || 0;
             }
             
-            // Somar a quantidade de itens
+            // Somar a quantidade de itens e agregar produtos
             if (venda.itens && Array.isArray(venda.itens)) {
-                totalItens += venda.itens.reduce((acc, item) => acc + (item.quantidade || 0), 0);
+                venda.itens.forEach(item => {
+                    totalItens += item.quantidade || 0;
+                    const nome = item.nome;
+                    const valor = item.valor || 0;
+                    const quantidade = item.quantidade || 0;
+
+                    if (produtosVendidos[nome]) {
+                        produtosVendidos[nome].quantidade += quantidade;
+                        produtosVendidos[nome].valorTotal += valor * quantidade;
+                    } else {
+                        produtosVendidos[nome] = {
+                            quantidade: quantidade,
+                            valorTotal: valor * quantidade
+                        };
+                    }
+                });
             }
 
             // Somar os valores por tipo de pagamento
@@ -92,6 +108,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const formatarPreco = (valor) => `R$ ${valor.toFixed(2).replace('.', ',')}`;
 
+        let produtosHTML = '<h3 style="text-align: center; margin-bottom: 20px; margin-top: 25px; border-top: 1px dashed var(--border-color); padding-top: 15px;">PRODUTOS VENDIDOS</h3>';
+        for (const nome in produtosVendidos) {
+            const produto = produtosVendidos[nome];
+            produtosHTML += `
+                <div class="carrinho-total">
+                    <span>${produto.quantidade}x ${nome}</span>
+                    <span class="valor">${formatarPreco(produto.valorTotal)}</span>
+                </div>
+            `;
+        }
+
+
         resumoContent.innerHTML = `
             <div class="fechamento-info" style="margin-bottom: 20px; text-align: center; font-size: 0.9em; color: var(--text-muted);">
                 <p><strong>UNIDADE SP</strong></p>
@@ -109,6 +137,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <span>TOTAL DE VENDAS:</span>
                 <span class="valor">${formatarPreco(totalVendas)}</span>
             </div>
+
+            ${produtosHTML}
 
             <div class="fechamento-detalhes" style="margin-top: 25px; border-top: 1px dashed var(--border-color); padding-top: 15px;">
                 <h3 style="text-align: center; margin-bottom: 20px;">DETALHES POR PAGAMENTO</h3>
