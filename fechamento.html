@@ -5,6 +5,58 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fechamento de Caixa - Patati Patata PDV</title>
     <link rel="stylesheet" href="styles.css">
+    <style>
+        .conferencia-item {
+            margin-bottom: 20px;
+        }
+        .conferencia-item label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--text-primary);
+            font-size: 0.9em;
+        }
+        .conferencia-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: var(--background-dark);
+            color: var(--text-primary);
+            font-size: 1.1em;
+        }
+        .conferencia-comparacao {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 0.9em;
+        }
+        .conferencia-comparacao .diferenca {
+            font-weight: bold;
+        }
+        .diferenca.positiva {
+            color: var(--blue-info);
+        }
+        .diferenca.negativa {
+            color: var(--red-error);
+        }
+
+        /* Estilos de Impressão */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #printable-area, #printable-area * {
+                visibility: visible;
+            }
+            #printable-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+        }
+
+    </style>
 </head>
 <body>
     <header class="pdv-header">
@@ -23,6 +75,51 @@
             <div id="resumo-content">
                 <p>Carregando...</p>
             </div>
+            
+            <div id="conferencia-container" style="margin-top: 30px; border-top: 2px solid var(--border-color); padding-top: 20px;">
+                <h3 style="text-align: center; margin-bottom: 20px;">CONFERÊNCIA DE VALORES</h3>
+                
+                <div class="conferencia-item">
+                    <label for="apurado-pix">PIX (Apurado)</label>
+                    <input type="number" id="apurado-pix" class="conferencia-input" placeholder="R$ 0,00">
+                    <div class="conferencia-comparacao">
+                        <span>Sistema: <span id="sistema-pix">R$ 0,00</span></span>
+                        <span>Diferença: <span id="diferenca-pix" class="diferenca">R$ 0,00</span></span>
+                    </div>
+                </div>
+
+                <div class="conferencia-item">
+                    <label for="apurado-credito">CRÉDITO (Apurado)</label>
+                    <input type="number" id="apurado-credito" class="conferencia-input" placeholder="R$ 0,00">
+                    <div class="conferencia-comparacao">
+                        <span>Sistema: <span id="sistema-credito">R$ 0,00</span></span>
+                        <span>Diferença: <span id="diferenca-credito" class="diferenca">R$ 0,00</span></span>
+                    </div>
+                </div>
+
+                <div class="conferencia-item">
+                    <label for="apurado-debito">DÉBITO (Apurado)</label>
+                    <input type="number" id="apurado-debito" class="conferencia-input" placeholder="R$ 0,00">
+                    <div class="conferencia-comparacao">
+                        <span>Sistema: <span id="sistema-debito">R$ 0,00</span></span>
+                        <span>Diferença: <span id="diferenca-debito" class="diferenca">R$ 0,00</span></span>
+                    </div>
+                </div>
+
+                <div class="conferencia-item">
+                    <label for="apurado-dinheiro">DINHEIRO (Apurado)</label>
+                    <input type="number" id="apurado-dinheiro" class="conferencia-input" placeholder="R$ 0,00">
+                    <div class="conferencia-comparacao">
+                        <span>Sistema: <span id="sistema-dinheiro">R$ 0,00</span></span>
+                        <span>Diferença: <span id="diferenca-dinheiro" class="diferenca">R$ 0,00</span></span>
+                    </div>
+                </div>
+            </div>
+
+             <div style="text-align: center; margin-top: 30px;">
+                 <button id="btn-imprimir" class="btn-primary" style="width: 100%; padding: 15px;">IMPRIMIR FECHAMENTO</button>
+            </div>
+
         </div>
     </main>
 
