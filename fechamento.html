@@ -5,31 +5,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fechamento de Caixa - Patati Patata PDV</title>
     <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="portal_admin.css">
 </head>
 <body>
     <header class="pdv-header">
         <div class="pdv-header-left">
-            Patati Patata PDV - Fechamento de Caixa
+            Fechamento de Caixa
         </div>
         <div class="pdv-header-right">
-            <a href="pdv.html" class="btn-header">Voltar ao PDV</a>
-            <button class="btn-header btn-fechar" onclick="location.href='index.html'">
-                ❌ Sair
-            </button>
+            <span style="color: var(--text-muted); font-size: 14px;">Logado como: <strong id="user-display"></strong></span>
+            <a href="pdv.html">Voltar ao PDV</a>
         </div>
     </header>
 
-    <main class="admin-main">
-        <div class="tabcontent" style="display: block;">
-            <h3>Fechamento de Caixa</h3>
-            <p>Esta é a página de fechamento de caixa. Funcionalidade a ser implementada.</p>
+    <main class="pdv-main" style="display: flex; justify-content: center; align-items: flex-start; padding-top: 20px;">
+        <div id="fechamento-container" class="carrinho-resumo" style="width: 100%; max-width: 480px; background-color: var(--background-light); padding: 20px; border-radius: 8px;">
+            <h2 class="carrinho-titulo" style="text-align: center;">Resumo do Dia</h2>
+            <div id="resumo-content">
+                <p>Carregando...</p>
+            </div>
         </div>
     </main>
 
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js"></script>
+    
+    <!-- Script de Fechamento -->
     <script src="fechamento.js"></script>
 </body>
 </html>
