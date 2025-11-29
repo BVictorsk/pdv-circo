@@ -409,29 +409,32 @@ body {
 
 .carrinho-item {
     background-color: var(--input-bg);
-    border-radius: 8px;
-    padding: 10px;
-    margin-bottom: 10px;
+    border-radius: 6px;
+    padding: 6px 8px;
+    margin-bottom: 6px;
 }
 
 .item-header {
     font-weight: 600;
     color: var(--text-light);
-    margin-bottom: 5px;
-    font-size: 15px;
+    margin-bottom: 0;
+    font-size: 13px;
 }
 
 .item-footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 8px;
 }
 
 /* Botões do Carrinho */
 .item-acoes-esquerda {
     display: flex;
     align-items: center;
-    gap: 10px; 
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
 }
 
 .item-preco-qtde {
@@ -568,13 +571,13 @@ body {
 
 /* NOVO: Crédito */
 .btn-credito {
-    background-color: var(--blue-credit);
+    background-color: #e91e63;
     color: var(--text-light);
 }
 
 .btn-dinheiro {
     background-color: var(--yellow-warning);
-    color: var(--bg-dark); 
+    color: var(--text-light);
 }
 
 .btn-cancelar {

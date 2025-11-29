@@ -84,22 +84,26 @@ document.addEventListener('DOMContentLoaded', () => {
             themeSwitcher.addEventListener('click', () => {
                 body.classList.toggle('light-theme');
                 const isLightTheme = body.classList.contains('light-theme');
-                themeSwitcher.textContent = isLightTheme ? 'Tema Escuro' : 'Tema Claro';
+                themeSwitcher.textContent = isLightTheme ? '🌙' : '☀️';
             });
         }
 
         const btnToggleOutrosProdutos = document.getElementById('btn-toggle-outros-produtos');
-        if (btnToggleOutrosProdutos) {
-            btnToggleOutrosProdutos.addEventListener('click', () => {
-                const outrosProdutosGrid = document.getElementById('outros-produtos-grid');
-                outrosProdutosGrid.classList.toggle('collapsed');
-                
-                if (outrosProdutosGrid.classList.contains('collapsed')) {
-                    btnToggleOutrosProdutos.textContent = '▶ Expandir';
-                } else {
-                    btnToggleOutrosProdutos.textContent = '▼ Recolher';
-                }
-            });
+        const produtosSectionHeader = document.getElementById('produtos-secao-header-outros');
+        
+        const toggleOutrosProdutos = () => {
+            const outrosProdutosGrid = document.getElementById('outros-produtos-grid');
+            outrosProdutosGrid.classList.toggle('collapsed');
+            
+            if (outrosProdutosGrid.classList.contains('collapsed')) {
+                btnToggleOutrosProdutos.textContent = '▶ Expandir';
+            } else {
+                btnToggleOutrosProdutos.textContent = '▼ Recolher';
+            }
+        };
+        
+        if (produtosSectionHeader) {
+            produtosSectionHeader.addEventListener('click', toggleOutrosProdutos);
         }
 
         const loggedInUser = sessionStorage.getItem('loggedInUser');
@@ -497,12 +501,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 listItem.classList.add('carrinho-item');
 
                 listItem.innerHTML = `
-                    <div class="item-header">${item.nome}</div>
                     <div class="item-footer">
                         <div class="item-acoes-esquerda">
                              <button class="btn-controle btn-cancelar-item" data-id="${item.id}" data-acao="cancelarItem">
                                 &times;
                             </button>
+                            <div class="item-header">${item.nome}</div>
                             <div class="item-preco-qtde">
                                 ${formatarPreco(item.preco)} x ${item.quantidade}
                             </div>
