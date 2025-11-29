@@ -11,8 +11,9 @@
  * @param {number} trocoNecessario - O valor do troco.
  * @param {function} formatarPreco - Função para formatar valores monetários.
  * @param {string} loggedInUser - O nome do operador logado.
+ * @param {string} titulo - O título do recibo (e.g., "RECIBO DE VENDA").
  */
-function imprimirRecibo(vendaId, carrinho, valorTotal, pagamentosEfetuados, trocoNecessario, formatarPreco, loggedInUser) {
+function imprimirRecibo(vendaId, carrinho, valorTotal, pagamentosEfetuados, trocoNecessario, formatarPreco, loggedInUser, titulo = 'RECIBO') {
     const data = new Date();
     const dataFormatada = `${data.toLocaleDateString('pt-BR')} ${data.toLocaleTimeString('pt-BR')}`;
     const operador = loggedInUser || 'N/A';
@@ -34,7 +35,7 @@ function imprimirRecibo(vendaId, carrinho, valorTotal, pagamentosEfetuados, troc
         });
     } else {
         console.warn("Interface AndroidPrint não encontrada. Imprimindo um recibo consolidado via navegador.");
-        imprimirViaNavegador(vendaId, carrinho, valorTotal, pagamentosEfetuados, trocoNecessario, formatarPreco, operador, dataFormatada);
+        imprimirViaNavegador(vendaId, carrinho, valorTotal, pagamentosEfetuados, trocoNecessario, formatarPreco, operador, dataFormatada, titulo);
     }
 }
 
@@ -78,39 +79,65 @@ function imprimirFichas(itensParaImprimir, vendaId) {
 /**
  * Função de fallback para imprimir um recibo consolidado na web.
  */
-function imprimirViaNavegador(vendaId, carrinho, valorTotal, pagamentosEfetuados, trocoNecessario, formatarPreco, operador, dataFormatada) {
-    let itensReciboHTML = carrinho.map(item => `
-        <tr>
-            <td>${item.quantidade}x ${item.nome}</td>
-            <td>${formatarPreco(item.valor * item.quantidade)}</td>
-        </tr>
-    `).join('');
+function imprimirViaNavegador(vendaId, carrinho, valorTotal, pagamentosEfetuados, trocoNecessario, formatarPreco, operador, dataFormatada, titulo) {
+    let itensReciboHTML = carrinho.map(item => {
+        // Adiciona um indicador de devolução ou adição para trocas
+        let indicador = '';
+        if (titulo.includes('TROCA')) {
+            if (item.quantidade < 0) {
+                indicador = ' (Devolvido)';
+            } else if (item.quantidade > 0) {
+                indicador = ' (Adicionado)';
+            }
+        }
+        const quantidade = Math.abs(item.quantidade);
+        const nome = item.nome + indicador;
 
-    let pagamentosReciboHTML = pagamentosEfetuados.map(p => `
+        return `
+        <tr>
+            <td>${quantidade}x ${nome}</td>
+            <td>${formatarPreco(item.precoUnitario * quantidade)}</td>
+        </tr>
+    `}).join('');
+
+    // Garante que pagamentosEfetuados é um array antes de mapear
+    let pagamentosReciboHTML = Array.isArray(pagamentosEfetuados) ? pagamentosEfetuados.map(p => `
         <p><strong>${p.tipo.toUpperCase()}:</strong> ${formatarPreco(p.valor)}</p>
-    `).join('');
+    `).join('') : '';
+
+    // Determina o que mostrar como valor total
+    let totalLabel = "TOTAL";
+    let totalValue = valorTotal;
+    if (titulo.includes('TROCA')) {
+        totalLabel = "DIFERENÇA A PAGAR";
+        // O valor total já é a diferença, então usamos ele diretamente
+    }
+
 
     const conteudoRecibo = `
         <html>
         <head>
-            <title>Recibo</title>
+            <title>${titulo}</title>
             <style>
                 body { font-family: 'Courier New', monospace; font-size: 10px; }
                 .recibo-container { width: 280px; margin: 0 auto; }
-                h2, p, table { margin: 5px 0; }
+                h2, h3, p, table { margin: 5px 0; }
                 hr { border: none; border-top: 1px dashed #000; }
+                table { width: 100%; border-collapse: collapse; }
+                td { padding: 2px 0; }
             </style>
         </head>
         <body>
             <div class="recibo-container">
                 <h2>Patati Patata PDV</h2>
+                <h3>${titulo}</h3>
                 <p>Data: ${dataFormatada}</p>
                 <p>Operador: ${operador}</p>
                 <p>Venda: #${vendaId}</p>
                 <hr>
                 <table>${itensReciboHTML}</table>
                 <hr>
-                <p><strong>TOTAL:</strong> ${formatarPreco(valorTotal)}</p>
+                <p><strong>${totalLabel}:</strong> ${formatarPreco(totalValue)}</p>
                 ${pagamentosReciboHTML}
                 ${trocoNecessario > 0 ? `<p><strong>TROCO:</strong> ${formatarPreco(trocoNecessario)}</p>` : ''}
                 <hr>
@@ -124,6 +151,9 @@ function imprimirViaNavegador(vendaId, carrinho, valorTotal, pagamentosEfetuados
     printWindow.document.write(conteudoRecibo);
     printWindow.document.close();
     printWindow.focus();
-    printWindow.print();
-    printWindow.close();
+    // Pequeno atraso para garantir que o conteúdo seja renderizado antes de imprimir
+    setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+    }, 250);
 }
