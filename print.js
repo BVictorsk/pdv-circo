@@ -2,7 +2,7 @@
 
 /**
  * Imprime um recibo para cada item no carrinho, no estilo "quermesse".
- * Cada item gera uma impressão separada.
+ * Cada item gera uma impressão separada COM TODAS as informações da venda.
  *
  * @param {string} vendaId - O ID da venda do Firestore.
  * @param {Array} carrinho - O array de itens no carrinho.
@@ -13,26 +13,62 @@
  * @param {string} loggedInUser - O nome do operador logado.
  * @param {string} titulo - O título do recibo (e.g., "RECIBO DE VENDA").
  */
+
 function imprimirRecibo(vendaId, carrinho, valorTotal, pagamentosEfetuados, trocoNecessario, formatarPreco, loggedInUser, titulo = 'RECIBO') {
     const data = new Date();
     const dataFormatada = `${data.toLocaleDateString('pt-BR')} ${data.toLocaleTimeString('pt-BR')}`;
     const operador = loggedInUser || 'N/A';
 
     if (window.AndroidPrint && typeof window.AndroidPrint.print === 'function') {
+        console.log("Modo 'Quermesse'. Montando cupons individuais.");
+
+        // 1. Monta o bloco de informações financeiras UMA VEZ.
+        let textoFinanceiro = `--------------------------------\n`;
+        textoFinanceiro += `TOTAL: ${formatarPreco(valorTotal)}\n`;
+        if (Array.isArray(pagamentosEfetuados)) {
+            pagamentosEfetuados.forEach(p => {
+                textoFinanceiro += `${p.tipo.toUpperCase()}: ${formatarPreco(p.valor)}\n`;
+            });
+        }
+        if (trocoNecessario > 0) {
+            textoFinanceiro += `TROCO: ${formatarPreco(trocoNecessario)}\n`;
+        }
+        textoFinanceiro += `--------------------------------\n`;
+
+        // 2. String que vai concatenar todos os cupons.
+        let dadosCompletosParaImpressao = '';
+
+        // 3. Itera sobre cada item para criar seu cupom.
         carrinho.forEach(item => {
             for (let i = 0; i < item.quantidade; i++) {
-                let dadosParaImpressao = '';
-                dadosParaImpressao += `        PATATI PATATA PDV\n`;
-                dadosParaImpressao += `--------------------------------\n`;
-                dadosParaImpressao += `            ${item.nome.toUpperCase()}\n`;
-                dadosParaImpressao += `--------------------------------\n`;
-                dadosParaImpressao += `Venda: #${vendaId.substring(0, 6)}\n`;
-                dadosParaImpressao += `Data: ${dataFormatada}\n`;
-                dadosParaImpressao += `Operador: ${operador}\n`;
-                dadosParaImpressao += `  <cut>\n`; 
-                window.AndroidPrint.print(dadosParaImpressao);
+                let cupomIndividual = '';
+                cupomIndividual += `        PATATI PATATA PDV\n`;
+                cupomIndividual += `--------------------------------\n`;
+                cupomIndividual += `          ${item.nome.toUpperCase()}\n`; // Item em destaque
+                cupomIndividual += `  (1x ${formatarPreco(item.preco)})\n`;
+                cupomIndividual += `--------------------------------\n`;
+                
+                // --- INFORMAÇÕES CORRIGIDAS ---
+                cupomIndividual += `Venda: #${vendaId}\n`; // <-- USA O ID COMPLETO
+                cupomIndividual += `Data: ${dataFormatada}\n`;
+                cupomIndividual += `Operador: ${operador}\n`;
+                
+                // Adiciona o bloco financeiro inteiro
+                cupomIndividual += textoFinanceiro;
+                
+                cupomIndividual += `Obrigado!\n\n`;
+
+                // Adiciona o marcador de corte ao final de cada cupom
+                cupomIndividual += `<cut>\n`; 
+
+                dadosCompletosParaImpressao += cupomIndividual;
             }
         });
+
+        // 4. Envia a string gigante com todos os cupons para o Android de uma só vez.
+        console.log("Enviando bloco de impressão para o Android.");
+        window.AndroidPrint.print(dadosCompletosParaImpressao);
+
     } else {
         console.warn("Interface AndroidPrint não encontrada. Imprimindo um recibo consolidado via navegador.");
         imprimirViaNavegador(vendaId, carrinho, valorTotal, pagamentosEfetuados, trocoNecessario, formatarPreco, operador, dataFormatada, titulo);
