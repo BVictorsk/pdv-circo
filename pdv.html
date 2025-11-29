@@ -82,6 +82,39 @@
             flex-grow: 1;
         }
 
+        /* Estilos para minimizar/maximizar seções */
+        .produtos-secao-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            padding: 10px 0;
+            border-bottom: 2px solid var(--primary-color);
+        }
+
+        .produtos-secao-header:hover {
+            opacity: 0.8;
+        }
+
+        .btn-toggle-secao {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .btn-toggle-secao:hover {
+            opacity: 0.8;
+        }
+
+        .produtos-grid.collapsed {
+            display: none;
+        }
+
     </style>
 </head>
 <body>
@@ -127,7 +160,10 @@
             </div>
 
             <div class="produtos-secao">
-                <h3>🎈 Outros Produtos</h3>
+                <div class="produtos-secao-header">
+                    <h3>🎈 Outros Produtos</h3>
+                    <button class="btn-toggle-secao" id="btn-toggle-outros-produtos">▼ Recolher</button>
+                </div>
                 <div class="produtos-grid" id="outros-produtos-grid">
                 </div>
             </div>
