@@ -88,6 +88,22 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Listener para o botão de minimizar/maximizar "Outros Produtos" (fora do if acessoRapidoGrid)
+    const btnToggleOutrosProdutos = document.getElementById('btn-toggle-outros-produtos');
+    if (btnToggleOutrosProdutos) {
+        btnToggleOutrosProdutos.addEventListener('click', () => {
+            const outrosProdutosGrid = document.getElementById('outros-produtos-grid');
+            outrosProdutosGrid.classList.toggle('collapsed');
+            
+            // Atualizar texto do botão
+            if (outrosProdutosGrid.classList.contains('collapsed')) {
+                btnToggleOutrosProdutos.textContent = '▶ Expandir';
+            } else {
+                btnToggleOutrosProdutos.textContent = '▼ Recolher';
+            }
+        });
+    }
+
     // --- FUNÇÕES DE LÓGICA CENTRAL ---
 
     if (acessoRapidoGrid) {
@@ -204,22 +220,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const btnBrinde = document.getElementById('btn-dar-brinde');
             if (btnBrinde) {
                  btnBrinde.addEventListener('click', mostrarInputBrinde);
-            }
-
-            // Listener para o botão de minimizar/maximizar "Outros Produtos"
-            const btnToggleOutrosProdutos = document.getElementById('btn-toggle-outros-produtos');
-            if (btnToggleOutrosProdutos) {
-                btnToggleOutrosProdutos.addEventListener('click', () => {
-                    const outrosProdutosGrid = document.getElementById('outros-produtos-grid');
-                    outrosProdutosGrid.classList.toggle('collapsed');
-                    
-                    // Atualizar texto do botão
-                    if (outrosProdutosGrid.classList.contains('collapsed')) {
-                        btnToggleOutrosProdutos.textContent = '▶ Expandir';
-                    } else {
-                        btnToggleOutrosProdutos.textContent = '▼ Recolher';
-                    }
-                });
             }
         }
 
