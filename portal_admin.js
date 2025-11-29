@@ -19,8 +19,8 @@ function openTab(evt, tabName) {
         carregarProdutos();
         resetFormularioProduto();
     } else if (tabName === 'Usuarios') {
-        // carregarUsuarios(); // Comentado pois não está totalmente implementado
-        // resetFormularioUsuario(); // Comentado pois não está totalmente implementado
+        carregarUsuarios();
+        resetFormularioUsuario();
     }
 }
 
@@ -87,7 +87,7 @@ async function carregarProdutos() {
 async function removerProduto(id) {
     if (typeof db === 'undefined' || db === null) return;
     try {
-        if (confirm(`Tem certeza que deseja remover o produto com ID: ${id}?`)) { // Mantido confirm para remoção, é uma ação destrutiva
+        if (confirm(`Tem certeza que deseja remover o produto com ID: ${id}?`)) {
             await db.collection("produtos").doc(id).delete();
             console.log("Produto removido com sucesso!");
             carregarProdutos();
@@ -135,9 +135,96 @@ function resetFormularioProduto() {
     if (inputProdutoId) inputProdutoId.disabled = false;
 }
 
-// --- Funções de Usuários (simplificadas) ---
-function carregarUsuarios() { console.log("Carregar usuários não implementado nesta versão."); }
-function resetFormularioUsuario() { console.log("Reset formulário de usuário não implementado."); }
+// --- Funções de Usuários ---
+async function carregarUsuarios() {
+    const usuariosGrid = document.getElementById("usuarios-grid");
+    const mensagemNenhumUsuario = document.getElementById("mensagem-nenhum-usuario");
+    if (!usuariosGrid || !mensagemNenhumUsuario) return;
+
+    usuariosGrid.innerHTML = "";
+    mensagemNenhumUsuario.style.display = "none";
+
+    if (typeof db === 'undefined' || db === null) {
+        console.error("Firestore 'db' is not available.");
+        return;
+    }
+
+    try {
+        const snapshot = await db.collection("usuarios").get();
+        if (snapshot.empty) {
+            mensagemNenhumUsuario.style.display = "block";
+            return;
+        }
+
+        snapshot.forEach(doc => {
+            const usuario = { id: doc.id, ...doc.data() };
+            const card = document.createElement("div");
+            card.className = "produto-card"; // Reutilizando a classe de card de produto
+
+            card.innerHTML = `
+                <div class="card-header">
+                    <div class="icone">👤</div>
+                    <div class="product-title-group">
+                        <div class="nome">${usuario.nomeCompleto}</div>
+                        <div class="product-id-display">Usuário: ${usuario.id}</div>
+                    </div>
+                    <div class="card-buttons">
+                        <button class="btn-action btn-editar-usuario" data-id="${usuario.id}" data-nome-completo="${usuario.nomeCompleto}" data-tipo-acesso="${usuario.tipoAcesso}" title="Editar Usuário">✏️</button>
+                        <button class="btn-action btn-excluir-usuario" data-id="${usuario.id}" title="Excluir Usuário">🗑️</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="setor">Tipo de Acesso: ${usuario.tipoAcesso}</div>
+                </div>`;
+            usuariosGrid.appendChild(card);
+        });
+    } catch (error) {
+        console.error("Erro ao carregar usuários: ", error);
+    }
+}
+
+async function removerUsuario(id) {
+    if (typeof db === 'undefined' || db === null) return;
+    try {
+        if (confirm(`Tem certeza que deseja remover o usuário com ID: ${id}?`)) {
+            await db.collection("usuarios").doc(id).delete();
+            console.log("Usuário removido com sucesso!");
+            carregarUsuarios();
+        } else {
+            console.log("Remoção de usuário cancelada.");
+        }
+    } catch (error) {
+        console.error("Erro ao remover usuário: ", error);
+    }
+}
+
+function editarUsuario(id, nomeCompleto, tipoAcesso) {
+    resetFormularioUsuario();
+
+    document.getElementById("usuario-id").value = id;
+    document.getElementById("usuario-nome-completo").value = nomeCompleto;
+    document.getElementById("usuario-tipo-acesso").value = tipoAcesso;
+
+    editingUserId = id;
+    document.getElementById("btn-salvar-usuario").textContent = "Atualizar Usuário";
+    document.getElementById("usuario-id").disabled = true;
+
+    document.getElementById("form-adicionar-usuario").scrollIntoView({ behavior: 'smooth' });
+}
+
+function resetFormularioUsuario() {
+    document.getElementById("usuario-nome-completo").value = "";
+    document.getElementById("usuario-id").value = "";
+    document.getElementById("usuario-senha").value = "";
+    document.getElementById("usuario-tipo-acesso").value = "Operador";
+
+    editingUserId = null;
+    const btnSalvarUsuario = document.getElementById("btn-salvar-usuario");
+    if (btnSalvarUsuario) btnSalvarUsuario.textContent = "Salvar Usuário";
+
+    const inputUsuarioId = document.getElementById("usuario-id");
+    if (inputUsuarioId) inputUsuarioId.disabled = false;
+}
 
 
 // --- Event Listeners Principais ---
@@ -159,7 +246,27 @@ document.addEventListener("DOMContentLoaded", () => {
             const deleteButton = e.target.closest('.btn-excluir-produto');
             if (deleteButton) {
                 const idParaRemover = deleteButton.dataset.id;
-                removerProduto(idParaRemover); // removerProduto agora tem o confirm
+                removerProduto(idParaRemover);
+                return;
+            }
+        });
+    }
+
+    // Gerenciador de cliques para a lista de usuários (Event Delegation)
+    const usuariosGrid = document.getElementById("usuarios-grid");
+    if (usuariosGrid) {
+        usuariosGrid.addEventListener('click', (e) => {
+            const editButton = e.target.closest('.btn-editar-usuario');
+            if (editButton) {
+                const { id, nomeCompleto, tipoAcesso } = editButton.dataset;
+                editarUsuario(id, nomeCompleto, tipoAcesso);
+                return;
+            }
+
+            const deleteButton = e.target.closest('.btn-excluir-usuario');
+            if (deleteButton) {
+                const idParaRemover = deleteButton.dataset.id;
+                removerUsuario(idParaRemover);
                 return;
             }
         });
@@ -209,6 +316,58 @@ document.addEventListener("DOMContentLoaded", () => {
                 carregarProdutos();
             } catch (error) {
                 console.error("Erro ao salvar produto: ", error);
+            }
+        });
+    }
+
+    // Formulário de Usuários
+    const btnSalvarUsuario = document.getElementById("btn-salvar-usuario");
+    const btnCancelarUsuario = document.getElementById("btn-cancelar-usuario");
+
+    if (btnCancelarUsuario) {
+        btnCancelarUsuario.addEventListener("click", resetFormularioUsuario);
+    }
+
+    if (btnSalvarUsuario) {
+        btnSalvarUsuario.addEventListener("click", async () => {
+            const id = document.getElementById("usuario-id").value;
+            const nomeCompleto = document.getElementById("usuario-nome-completo").value;
+            const senha = document.getElementById("usuario-senha").value;
+            const tipoAcesso = document.getElementById("usuario-tipo-acesso").value;
+
+            if (!id || !nomeCompleto) {
+                console.error("Preencha o ID e o Nome Completo do usuário.");
+                return;
+            }
+
+            // A senha só é obrigatória ao criar um novo usuário
+            if (!editingUserId && !senha) {
+                console.error("A senha é obrigatória para novos usuários.");
+                return;
+            }
+
+            const usuarioData = {
+                nomeCompleto: nomeCompleto,
+                tipoAcesso: tipoAcesso,
+            };
+
+            // Adiciona a senha apenas se ela foi fornecida
+            if (senha) {
+                usuarioData.senha = senha;
+            }
+
+            try {
+                if (editingUserId) {
+                    await db.collection("usuarios").doc(editingUserId).update(usuarioData);
+                    console.log("Usuário atualizado com sucesso!");
+                } else {
+                    await db.collection("usuarios").doc(id).set(usuarioData);
+                    console.log("Usuário salvo com sucesso!");
+                }
+                resetFormularioUsuario();
+                carregarUsuarios();
+            } catch (error) {
+                console.error("Erro ao salvar usuário: ", error);
             }
         });
     }
