@@ -534,9 +534,32 @@ body {
     border-left: 3px solid var(--purple-main);
     display: flex;
     justify-content: space-between;
+    align-items: center;
 }
 .pagamento-item:last-child {
     margin-bottom: 0;
+}
+
+.btn-remover-pagamento {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.btn-remover-pagamento:hover {
+    background-color: #d32f2f;
+    transform: scale(1.1);
 }
 
 /* --- ESTILO PARA INPUT DE PAGAMENTO --- */

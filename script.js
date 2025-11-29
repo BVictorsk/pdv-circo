@@ -77,6 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Elementos de busca
     const buscaProdutoInput = document.getElementById('busca-produto-input');
     const btnLimparBusca = document.getElementById('btn-limpar-busca');
+    const btnConfirmarBusca = document.getElementById('btn-confirmar-busca');
 
 
     if(themeSwitcher) {
@@ -169,9 +170,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (pagamentosEfetuados.length > 0) {
                     carrinhoResumoDiv.insertAdjacentHTML('beforeend',
                         '<ul class="pagamentos-lista">' +
-                        pagamentosEfetuados.map(p => `<li class="pagamento-item">${p.tipo.toUpperCase()}: ${formatarPreco(p.valor)}</li>`).join('') +
+                        pagamentosEfetuados.map((p, index) => `<li class="pagamento-item">${p.tipo.toUpperCase()}: ${formatarPreco(p.valor)} <button class="btn-remover-pagamento" data-index="${index}">✕</button></li>`).join('') +
                         '</ul>'
                     );
+                    
+                    // Adicionar listeners para botões de remover pagamento
+                    carrinhoResumoDiv.querySelectorAll('.btn-remover-pagamento').forEach(btn => {
+                        btn.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            const index = parseInt(e.target.getAttribute('data-index'));
+                            removerPagamento(index);
+                        });
+                    });
                 }
 
                 carrinhoResumoDiv.insertAdjacentHTML('beforeend', '<p class="carrinho-pagamento">Pagamento:</p><div class="opcoes-pagamento" id="opcoes-pagamento"></div><button class="btn-pagamento btn-cancelar" id="btn-cancelar">❌ Cancelar Pedido</button>');
@@ -378,6 +388,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
             renderizarOpcoesPagamento();
             calcularTotalEAtualizarResumo();
+        };
+
+        const removerPagamento = (index) => {
+            if (index < 0 || index >= pagamentosEfetuados.length) return;
+            
+            const pagamentoRemovido = pagamentosEfetuados[index];
+            valorPago -= pagamentoRemovido.valor;
+            pagamentosEfetuados.splice(index, 1);
+            
+            calcularTotalEAtualizarResumo();
+            reassociarListenersGerais();
         };
 
         const renderizarBotaoPagamento = (tipo) => {
@@ -637,10 +658,10 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         // Adicionar listeners para a busca
-        if (buscaProdutoInput && btnLimparBusca) {
+        if (buscaProdutoInput && btnLimparBusca && btnConfirmarBusca) {
+            // Ao digitar, mostrar o botão "X" para limpar
             buscaProdutoInput.addEventListener('keyup', () => {
-                const termoBusca = buscaProdutoInput.value;
-                renderizarProdutos(termoBusca);
+                const termoBusca = buscaProdutoInput.value.trim();
                 if (termoBusca.length > 0) {
                     btnLimparBusca.style.display = 'inline-block';
                 } else {
@@ -648,10 +669,41 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
+            // Ao clicar em "Confirmar", buscar o produto pelo ID e adicionar ao carrinho
+            btnConfirmarBusca.addEventListener('click', () => {
+                const idBuscado = buscaProdutoInput.value.trim().toLowerCase();
+                
+                if (!idBuscado) {
+                    alert('Por favor, digite um ID de produto.');
+                    return;
+                }
+                
+                // Buscar o produto exato com esse ID
+                const produtoEncontrado = produtosDoFirestore.find(p => p.id.toLowerCase() === idBuscado);
+                
+                if (produtoEncontrado) {
+                    adicionarAoCarrinho(produtoEncontrado);
+                    buscaProdutoInput.value = '';
+                    btnLimparBusca.style.display = 'none';
+                    alert(`${produtoEncontrado.nome} adicionado ao carrinho!`);
+                } else {
+                    alert(`Produto com ID "${idBuscado}" não encontrado.`);
+                }
+            });
+
+            // Ao clicar em "X", limpar o campo
             btnLimparBusca.addEventListener('click', () => {
                 buscaProdutoInput.value = '';
-                renderizarProdutos('');
                 btnLimparBusca.style.display = 'none';
+                buscaProdutoInput.focus();
+            });
+
+            // Permitir também pressionar Enter para confirmar a busca
+            buscaProdutoInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    btnConfirmarBusca.click();
+                }
             });
         }
 

@@ -82,6 +82,23 @@
             flex-grow: 1;
         }
 
+        .btn-confirmar-busca {
+            background-color: var(--green-success);
+            color: white;
+            border: none;
+            padding: 10px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .btn-confirmar-busca:hover {
+            opacity: 0.8;
+            transform: scale(1.05);
+        }
+
         /* Estilos para minimizar/maximizar seções */
         .produtos-secao-header {
             display: flex;
@@ -149,7 +166,8 @@
 
             <!-- NOVO CAMPO DE BUSCA -->
             <div class="busca-input-container">
-                <input type="text" id="busca-produto-input" placeholder="Buscar produto por ID..." class="input-field">
+                <input type="text" id="busca-produto-input" placeholder="Digite o ID do produto..." class="input-field">
+                <button id="btn-confirmar-busca" class="btn-confirmar-busca">✓</button>
                 <button id="btn-limpar-busca" class="btn-controle" style="display: none;">X</button>
             </div>
             
@@ -162,9 +180,9 @@
             <div class="produtos-secao">
                 <div class="produtos-secao-header">
                     <h3>🎈 Outros Produtos</h3>
-                    <button class="btn-toggle-secao" id="btn-toggle-outros-produtos">▼ Recolher</button>
+                    <button class="btn-toggle-secao" id="btn-toggle-outros-produtos">▶ Expandir</button>
                 </div>
-                <div class="produtos-grid" id="outros-produtos-grid">
+                <div class="produtos-grid collapsed" id="outros-produtos-grid">
                 </div>
             </div>
 
@@ -196,10 +214,10 @@
                     <button class="btn-pagamento btn-dinheiro" data-tipo="dinheiro">
                         💵 Dinheiro
                     </button>
-                    <button class="btn-pagamento btn-cancelar" id="btn-cancelar">
-                        ❌ Cancelar Pedido
-                    </button>
                 </div>
+                <button class="btn-pagamento btn-cancelar" id="btn-cancelar">
+                    ❌ Cancelar Pedido
+                </button>
             </div>
         </section>
     </main>
