@@ -80,19 +80,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     };
 
-    /**
-     * Prepara os dados de uma venda para edição, armazena o ID no sessionStorage
-     * e redireciona para a nova página de edição.
-     * @param {string} vendaId - O ID do documento da venda no Firestore.
-     */
     window.editarVenda = async (vendaId) => {
         console.log(`Iniciando edição da venda ID: ${vendaId}`);
         try {
-            // Armazena apenas o ID da venda no sessionStorage. A página de edição
-            // irá buscar todos os detalhes da venda usando este ID.
             sessionStorage.setItem('editVendaId', vendaId);
-            
-            // Redireciona para a nova página de edição de transação
             window.location.href = 'editar_transacao.html';
             
         } catch (error) {
@@ -127,7 +118,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             vendaCard.innerHTML = `
                 <div class="card-header">
-                    <h3>ID: ${venda.id.substring(0, 8)}...</h3>
+                    <h3>ID: ${venda.id}</h3>
                     <span class="data">${formatarData(venda.timestamp)}</span>
                 </div>
                 <div class="card-body">
@@ -137,9 +128,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <ul>${itensHTML}</ul>
                 </div>
                 <div class="card-actions">
-                    <button onclick="gerarSegundaVia('${venda.id}')">2ª Via</button>
-                    <button onclick="editarVenda('${venda.id}')">Editar</button>
-                    <button onclick="cancelarVenda('${venda.id}')">Cancelar</button>
+                    <button class="btn-action btn-via" onclick="gerarSegundaVia('${venda.id}')">2ª Via</button>
+                    <button class="btn-action btn-editar" onclick="editarVenda('${venda.id}')">Editar</button>
+                    <button class="btn-action btn-cancelar" onclick="cancelarVenda('${venda.id}')">Cancelar</button>
                 </div>`;
             transacoesGrid.appendChild(vendaCard);
         });

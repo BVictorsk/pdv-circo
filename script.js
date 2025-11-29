@@ -80,8 +80,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- FUNÇÕES DE LÓGICA CENTRAL ---
-
     if (acessoRapidoGrid) {
         const loggedInUser = sessionStorage.getItem('loggedInUser');
         if (loggedInUser) {
@@ -177,14 +175,12 @@ document.addEventListener('DOMContentLoaded', () => {
                  btnBrinde.addEventListener('click', mostrarInputBrinde);
             }
 
-            // Listener para o botão de minimizar/maximizar "Outros Produtos"
             const btnToggleOutrosProdutos = document.getElementById('btn-toggle-outros-produtos');
             if (btnToggleOutrosProdutos) {
                 btnToggleOutrosProdutos.addEventListener('click', () => {
                     const outrosProdutosGrid = document.getElementById('outros-produtos-grid');
                     outrosProdutosGrid.classList.toggle('collapsed');
                     
-                    // Atualizar texto do botão
                     if (outrosProdutosGrid.classList.contains('collapsed')) {
                         btnToggleOutrosProdutos.textContent = '▶ Expandir';
                     } else {

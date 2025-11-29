@@ -1,7 +1,5 @@
-
 document.addEventListener('DOMContentLoaded', async () => {
     const db = firebase.firestore();
-    // --- ELEMENT SELECTORS ---
     const userDisplay = document.getElementById('user-display');
     const transacaoDetalhesContainer = document.getElementById('transacao-detalhes');
     const itensVendaContainer = document.getElementById('itens-venda-container');
@@ -12,7 +10,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const novoValorDisplay = document.getElementById('novo-valor-display');
     const diferencaDisplay = document.getElementById('diferenca-display');
 
-    // Modal de Pagamento
     const pagamentoModal = document.getElementById('pagamentoDiferencaModal');
     const closeModalButton = document.getElementById('close-pagamento-modal');
     const valorDiferencaPagar = document.getElementById('valor-diferenca-pagar');
@@ -22,7 +19,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const trocoDiferencaDisplay = document.getElementById('troco-diferenca-display');
     const btnConfirmarDinheiro = document.getElementById('btn-confirmar-dinheiro');
 
-    // --- SESSION & STATE ---
     const loggedInUser = sessionStorage.getItem('loggedInUser');
     const vendaId = sessionStorage.getItem('editVendaId');
     let valorOriginalDaCompra;
@@ -31,10 +27,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     let catalogoProdutos = [];
     let pagamentosDaDiferenca = [];
 
-    // --- FORMATTERS ---
     const formatarPreco = (valor) => `R$ ${typeof valor === 'number' ? valor.toFixed(2).replace('.', ',') : '0,00'}`;
 
-    // --- RENDER FUNCTIONS ---
     function renderDetalhesBasicos() {
         transacaoDetalhesContainer.innerHTML = `<h3>Editando a Venda ID: ${vendaId}</h3>`;
     }
@@ -71,7 +65,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // --- LOGIC FUNCTIONS ---
     function recalcularValores() {
         const novoTotal = itensEdicao.reduce((acc, item) => acc + (item.preco * item.quantidade), 0);
         const diferenca = novoTotal - valorOriginalDaCompra;
@@ -101,7 +94,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     itensImpressao.push({
                         nome: itemInfo.nome,
                         quantidade: diferencaQtd,
-                        preco: itemInfo.preco
+                        precoUnitario: itemInfo.preco
                     });
                 }
             }
@@ -135,7 +128,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             btnConfirmarDinheiro.onclick = () => {
                 const pago = parseFloat(valorPagoInput.value) || 0;
                 if (pago >= diferenca) {
-                    pagamentosDaDiferenca.push({ forma: 'Dinheiro', valor: diferenca });
+                    pagamentosDaDiferenca.push({ tipo: 'Dinheiro', valor: diferenca });
                     finalizarEdicao(0, pago - diferenca);
                     fecharModalPagamento();
                 } else {
@@ -143,7 +136,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             };
         } else {
-            pagamentosDaDiferenca.push({ forma: tipo, valor: diferenca });
+            pagamentosDaDiferenca.push({ tipo: tipo, valor: diferenca });
             finalizarEdicao(0, 0);
             fecharModalPagamento();
         }
@@ -173,7 +166,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 valorTotal: novoTotal,
                 valorOriginalTroca: valorOriginalDaCompra,
                 itensAnteriores: itensOriginais,
-                pagamentosDiferenca: pagamentosDaDiferenca || [],
+                pagamentosDiferenca: pagamentosDaDiferenca,
                 ultimaAtualizacao: firebase.firestore.FieldValue.serverTimestamp()
             });
 
@@ -186,20 +179,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             backLink.className = 'btn-header'; 
             document.querySelector('.btn-salvar-cancelar-container').appendChild(backLink);
 
-
             if (itensParaImprimir.length > 0 && typeof imprimirRecibo !== 'undefined') {
                 const diferencaCalculada = novoTotal - valorOriginalDaCompra;
-                const carrinhoImpressao = itensParaImprimir.map(item => ({
-                    nome: `${item.nome}`,
-                    quantidade: item.quantidade,
-                    precoUnitario: item.preco,
-                }));
 
                 imprimirRecibo(
                     `${vendaId}-TROCA-${Date.now()}`,
-                    carrinhoImpressao,
-                    diferencaCalculada > 0 ? diferencaCalculada : 0,
-                    pagamentosDaDiferenca || [],
+                    itensParaImprimir,
+                    diferencaCalculada,
+                    pagamentosDaDiferenca,
                     trocoPagamentoDiferenca > 0 ? trocoPagamentoDiferenca : troco,
                     formatarPreco,
                     loggedInUser,
@@ -215,7 +202,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // --- EVENT LISTENERS ---
     itensVendaContainer.addEventListener('change', (e) => {
         if (e.target.classList.contains('item-qty-input')) {
             const index = parseInt(e.target.dataset.index, 10);
@@ -262,7 +248,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // --- INITIALIZATION ---
     async function initialize() {
         if (userDisplay && loggedInUser) userDisplay.textContent = loggedInUser;
         if (!vendaId) {
