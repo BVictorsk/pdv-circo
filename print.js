@@ -58,9 +58,6 @@ function imprimirRecibo(vendaId, carrinho, valorTotal, pagamentosEfetuados, troc
                 
                 cupomIndividual += `Obrigado!\n\n`;
 
-                // Adiciona o marcador de corte ao final de cada cupom
-                cupomIndividual += `<cut>\n`; 
-
                 dadosCompletosParaImpressao += cupomIndividual;
             }
         });
@@ -96,10 +93,9 @@ function imprimirFichas(itensParaImprimir, vendaId) {
                 dadosParaImpressao += `--------------------------------\n`;
                 dadosParaImpressao += `            ${item.nome.toUpperCase()}\n`;
                 dadosParaImpressao += `--------------------------------\n`;
-                dadosParaImpressao += `Venda de Origem: #${vendaId.substring(0, 6)}\n`; // Referência à venda original
+                dadosParaImpressao += `Venda: #${vendaId}\n`;
                 dadosParaImpressao += `Data da Troca: ${dataFormatada}\n`;
                 dadosParaImpressao += `Operador: ${loggedInUser}\n`;
-                dadosParaImpressao += `  <cut>\n`;
 
                 console.log(`Imprimindo ficha de troca: 1x ${item.nome}`);
                 window.AndroidPrint.print(dadosParaImpressao);
