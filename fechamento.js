@@ -15,6 +15,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
+    // Função para formatar o input de moeda
+    const formatCurrencyInput = (input) => {
+        let value = input.value.replace(/\D/g, '');
+        value = (parseInt(value, 10) / 100).toFixed(2).replace('.', ',');
+        if (value === 'NaN') value = '0,00';
+        input.value = value;
+    };
+
+    // Função para converter string de moeda para float
+    const parseCurrency = (value) => {
+        return parseFloat(value.replace('.', '').replace(',', '.')) || 0;
+    };
+
     try {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -85,20 +98,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         const totalDinheiroComTroco = totaisPorPagamento.dinheiro + trocoInicial;
         const formatarPreco = (valor) => `R$ ${valor.toFixed(2).replace('.', ',')}`;
 
-        const produtosHTML = Object.keys(produtosVendidos).length > 0 ?
-            `<div class="fechamento-detalhes" style="margin-top: 25px; border-top: 1px dashed var(--border-color); padding-top: 15px;">
-                <h3 style="text-align: center; margin-bottom: 20px;">PRODUTOS VENDIDOS</h3>
-                ${Object.keys(produtosVendidos).sort().map(nome => {
-                    const produto = produtosVendidos[nome];
-                    return `
-                        <div class="carrinho-total">
-                            <span>${produto.quantidade}x ${nome}</span>
-                            <span class="valor">${formatarPreco(produto.valorTotal)}</span>
-                        </div>
-                    `;
-                }).join('')}
-            </div>` : '';
-
         resumoContent.innerHTML = `
             <div class="fechamento-info" style="margin-bottom: 20px; text-align: center; font-size: 0.9em; color: var(--text-muted);">
                 <p><strong>UNIDADE SP</strong></p>
@@ -114,7 +113,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <span>TOTAL DE VENDAS:</span>
                 <span class="valor">${formatarPreco(totalVendas)}</span>
             </div>
-            ${produtosHTML}
             <div class="fechamento-detalhes" style="margin-top: 25px; border-top: 1px dashed var(--border-color); padding-top: 15px;">
                 <h3 style="text-align: center; margin-bottom: 20px;">DETALHES POR PAGAMENTO</h3>
                 <div class="carrinho-total"><span>PIX:</span><span class="valor">${formatarPreco(totaisPorPagamento.pix)}</span></div>
@@ -155,7 +153,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         };
 
         function calcularDiferenca(tipo) {
-            const valorApurado = parseFloat(inputsApurados[tipo].value) || 0;
+            const valorApurado = parseCurrency(inputsApurados[tipo].value);
             const valorSistema = totaisPorPagamento[tipo];
             const diferenca = valorApurado - valorSistema;
 
@@ -171,7 +169,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         Object.keys(inputsApurados).forEach(tipo => {
-            inputsApurados[tipo].addEventListener('input', () => calcularDiferenca(tipo));
+            inputsApurados[tipo].addEventListener('input', (e) => {
+                formatCurrencyInput(e.target);
+                calcularDiferenca(tipo);
+            });
         });
 
         // Lógica de Impressão
@@ -190,10 +191,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 produtosPrintHTML += '</div>';
             }
 
-            const apuradoPix = parseFloat(inputsApurados.pix.value) || 0;
-            const apuradoCredito = parseFloat(inputsApurados.credito.value) || 0;
-            const apuradoDebito = parseFloat(inputsApurados.debito.value) || 0;
-            const apuradoDinheiro = parseFloat(inputsApurados.dinheiro.value) || 0;
+            const apuradoPix = parseCurrency(inputsApurados.pix.value);
+            const apuradoCredito = parseCurrency(inputsApurados.credito.value);
+            const apuradoDebito = parseCurrency(inputsApurados.debito.value);
+            const apuradoDinheiro = parseCurrency(inputsApurados.dinheiro.value);
 
             const conferenciaHTML = `
                 <div style="border-top: 2px solid #000; padding-top: 15px; margin-top: 20px;">
