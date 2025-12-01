@@ -67,6 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let pagamentosEfetuados = [];
         let produtosDoFirestore = [];
         let vendaEmEdicaoId = null;
+        let justificativaBrinde = '';
 
         const outrosProdutosGrid = document.getElementById('outros-produtos-grid');
         const carrinhoLista = document.getElementById('carrinho-lista');
@@ -264,14 +265,15 @@ document.addEventListener('DOMContentLoaded', () => {
                         pagamentos: pagamentosEfetuados,
                         tipo: tipoFinalizacao,
                         operador: loggedInUser || 'N/A',
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                        justificativaBrinde: justificativaBrinde || null
                     });
                 });
                 
                 console.log("Venda salva com sucesso no Firestore! ID: ", vendaId);
 
                 if (vendaId) {
-                    imprimirRecibo(vendaId, carrinho, valorTotal, pagamentosEfetuados, trocoNecessario, formatarPreco, loggedInUser);
+                    imprimirRecibo(vendaId, carrinho, valorTotal, pagamentosEfetuados, trocoNecessario, formatarPreco, loggedInUser, justificativaBrinde);
                 }
 
                 carrinho = [];
@@ -279,6 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 valorTotal = 0;
                 trocoNecessario = 0;
                 pagamentosEfetuados = [];
+                justificativaBrinde = '';
                 renderizarCarrinho();
                 renderizarBotaoBrinde();
 
@@ -296,6 +299,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 valorTotal = 0;
                 trocoNecessario = 0;
                 pagamentosEfetuados = [];
+                justificativaBrinde = '';
                 renderizarCarrinho();
             } else {
                 console.log('O carrinho já está vazio.');
@@ -318,18 +322,25 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             brindeContainer.innerHTML = `
-                <div style="display: flex; gap: 5px; align-items: center; background-color: var(--blue-info); padding: 5px; border-radius: 8px;">
+                <div style="display: flex; flex-direction: column; gap: 5px; align-items: stretch; background-color: var(--blue-info); padding: 10px; border-radius: 8px;">
                     <input type="password"
                            id="brinde-senha-input"
                            class="input-field"
                            placeholder="Senha Supervisor"
-                           style="flex-grow: 1; padding: 8px; font-size: 14px; border: none;">
-                    <button id="btn-confirmar-brinde" class="btn-primary" style="padding: 8px 12px;">
-                        🔑 OK
-                    </button>
-                    <button id="btn-cancelar-brinde" class="btn-controle btn-cancelar-item" style="padding: 4px; width: 20px; height: 20px; font-size: 14px;">
-                        &times;
-                    </button>
+                           style="padding: 8px; font-size: 14px; border: none; border-radius: 4px;">
+                    <input type="text"
+                           id="brinde-justificativa-input"
+                           class="input-field"
+                           placeholder="Justificativa do brinde"
+                           style="padding: 8px; font-size: 14px; border: none; border-radius: 4px;">
+                    <div style="display: flex; gap: 5px; justify-content: flex-end;">
+                        <button id="btn-confirmar-brinde" class="btn-primary" style="padding: 8px 12px;">
+                            🔑 OK
+                        </button>
+                        <button id="btn-cancelar-brinde" class="btn-controle btn-cancelar-item" style="padding: 4px; width: 30px; height: 30px; font-size: 14px;">
+                            &times;
+                        </button>
+                    </div>
                 </div>
             `;
 
@@ -340,13 +351,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const processarBrinde = () => {
             const senhaInput = document.getElementById('brinde-senha-input');
+            const justificativaInput = document.getElementById('brinde-justificativa-input');
             const senhaDigitada = senhaInput.value;
+            const justificativa = justificativaInput.value;
             const loggedInUserAccessType = sessionStorage.getItem('loggedInUserAccessType');
 
             if (loggedInUserAccessType === 'Admin' || loggedInUserAccessType === 'A&O') {
                 if (senhaDigitada === SENHA_SUPERVISOR) {
                     valorPago = valorTotal;
                     pagamentosEfetuados = [{ tipo: 'BRINDE (Cortesia)', valor: valorTotal }];
+                    justificativaBrinde = justificativa;
                     finalizarVenda('BRINDE');
                 } else {
                     console.error('Senha incorreta para dar brinde.');
@@ -356,6 +370,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 console.error('Você não tem permissão para dar brindes.');
                 senhaInput.value = '';
+                justificativaInput.value = '';
                 renderizarBotaoBrinde();
             }
         };
