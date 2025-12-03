@@ -1,8 +1,5 @@
-// --- Lógica Completa e Corrigida (script.js) ---
-
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('firestoreReady', () => {
     // ---- CONTROLE DE ACESSO ----
-    // Este bloco foi movido para o topo para garantir que seja executado imediatamente.
     const loggedInUserAccessType = sessionStorage.getItem('loggedInUserAccessType');
     const adminPanelLink = document.getElementById('admin-panel-link');
 
