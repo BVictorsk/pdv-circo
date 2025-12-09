@@ -1,620 +1,226 @@
-// --- Lógica Completa e Corrigida (script.js) ---
+
+// --- SCRIPT UNIFICADO (LOGIN E PDV) ---
 
 document.addEventListener('DOMContentLoaded', () => {
-    // ---- CONTROLE DE ACESSO ----
-    // Este bloco foi movido para o topo para garantir que seja executado imediatamente.
-    const loggedInUserAccessType = sessionStorage.getItem('loggedInUserAccessType');
-    const adminPanelLink = document.getElementById('admin-panel-link');
 
-    if (adminPanelLink && loggedInUserAccessType === 'Operador') {
-        adminPanelLink.style.display = 'none';
-    }
-    // ---- FIM DO CONTROLE DE ACESSO ----
-
+    // --- LÓGICA DA PÁGINA DE LOGIN (executa se encontrar o 'login-form') ---
     const loginForm = document.getElementById('login-form');
-
     if (loginForm) {
-        loginForm.addEventListener('submit', async (event) => { 
-            event.preventDefault();
+        const setorSelect = document.getElementById('setor');
 
+        // Função para carregar os setores do Firestore
+        async function carregarSetores() {
+            if (!setorSelect) return;
+
+            try {
+                if (typeof db === 'undefined' || db === null) {
+                    console.error("Erro: Firestore não conectado.");
+                    setorSelect.innerHTML = '<option value="">Erro de conexão</option>';
+                    return;
+                }
+                const snapshot = await db.collection("produtos").get();
+                const setores = new Set();
+                snapshot.forEach(doc => {
+                    const produto = doc.data();
+                    if (produto.setor && produto.setor.trim() !== '') {
+                        setores.add(produto.setor);
+                    }
+                });
+
+                setorSelect.innerHTML = '<option value="">-- Selecione o Setor --</option>';
+                setores.forEach(setor => {
+                    const option = document.createElement('option');
+                    option.value = setor;
+                    option.textContent = setor;
+                    setorSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error("Erro ao carregar setores: ", error);
+                setorSelect.innerHTML = '<option value="">Falha ao carregar</option>';
+            }
+        }
+
+        carregarSetores();
+
+        // Evento de submit do formulário de login
+        loginForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
             const usuarioId = document.getElementById('usuario').value;
             const senha = document.getElementById('senha').value;
-            const troco = parseFloat(document.getElementById('troco').value.replace(',', '.'));
+            const setor = setorSelect.value;
 
-            if (isNaN(troco)) {
-                console.error('Troco inicial inválido.');
-                return;
-            }
-
-            if (typeof db === 'undefined' || db === null) {
-                console.error("Error: Firestore 'db' object is not defined or null. Ensure firebase-config.js is loaded correctly.");
-                console.error("Erro de conexão: Não foi possível acessar o banco de dados. Verifique sua configuração.");
+            if (!setor) {
+                alert('Por favor, selecione um setor.');
                 return;
             }
 
             try {
                 const userDoc = await db.collection("usuarios").doc(usuarioId).get();
-
                 if (userDoc.exists) {
                     const userData = userDoc.data();
                     if (userData.senha === senha) {
                         sessionStorage.setItem('loggedInUser', usuarioId);
                         sessionStorage.setItem('loggedInUserAccessType', userData.tipoAcesso);
-                        sessionStorage.setItem('trocoInicial', troco);
+                        sessionStorage.setItem('setorLogado', setor);
                         window.location.href = 'pdv.html';
                     } else {
-                        console.error('Senha incorreta.');
+                        alert('Senha incorreta.');
                     }
                 } else {
-                    console.error('Usuário não encontrado.');
+                    alert('Usuário não encontrado.');
                 }
             } catch (error) {
-                console.error("Erro ao autenticar usuário: ", error);
-                console.error("Erro ao tentar fazer login. Verifique o console para mais detalhes.");
+                console.error("Erro de autenticação: ", error);
+                alert("Erro ao tentar fazer login. Verifique o console.");
             }
         });
     }
 
-    const acessoRapidoGrid = document.getElementById('acesso-rapido-grid');
-    if (acessoRapidoGrid) {
-        const SENHA_SUPERVISOR = '5678'; 
+    // --- LÓGICA DA PÁGINA DO PDV (executa se encontrar o 'pdv-main') ---
+    const pdvMain = document.querySelector('.pdv-main');
+    if (pdvMain) {
+        // Validação de sessão: se não estiver logado, volta para o index.
+        const loggedInUser = sessionStorage.getItem('loggedInUser');
+        const setorLogado = sessionStorage.getItem('setorLogado');
+        if (!loggedInUser || !setorLogado) {
+            window.location.href = 'index.html';
+            return;
+        }
 
-        let carrinho = [];
-        let valorTotal = 0;
-        let valorPago = 0;
-        let valorRestante = 0;
-        let trocoNecessario = 0;
-        let pagamentosEfetuados = [];
-        let produtosDoFirestore = [];
-        let vendaEmEdicaoId = null;
-        let justificativaBrinde = '';
-
-        const outrosProdutosGrid = document.getElementById('outros-produtos-grid');
-        const carrinhoLista = document.getElementById('carrinho-lista');
-        const userDisplay = document.getElementById('user-display');
-        const carrinhoResumoDiv = document.querySelector('.pdv-carrinho .carrinho-resumo');
-        const brindeContainer = document.getElementById('brinde-container');
-        const themeSwitcher = document.getElementById('btn-theme-switcher');
-        const body = document.body;
-
-        const buscaProdutoInput = document.getElementById('busca-produto-input');
-        const btnLimparBusca = document.getElementById('btn-limpar-busca');
-        const btnConfirmarBusca = document.getElementById('btn-confirmar-busca');
-
-        if(themeSwitcher) {
-            themeSwitcher.addEventListener('click', () => {
-                body.classList.toggle('light-theme');
-                const isLightTheme = body.classList.contains('light-theme');
-                themeSwitcher.textContent = isLightTheme ? '🌙' : '☀️';
+        // Configuração do botão de logout
+        const btnLogout = document.getElementById('btn-logout');
+        if (btnLogout) {
+            btnLogout.addEventListener('click', () => {
+                sessionStorage.clear();
+                window.location.href = 'index.html';
             });
         }
 
-        const btnToggleOutrosProdutos = document.getElementById('btn-toggle-outros-produtos');
-        const produtosSectionHeader = document.getElementById('produtos-secao-header-outros');
-        
-        const toggleOutrosProdutos = () => {
-            const outrosProdutosGrid = document.getElementById('outros-produtos-grid');
-            outrosProdutosGrid.classList.toggle('collapsed');
-            
-            if (outrosProdutosGrid.classList.contains('collapsed')) {
-                btnToggleOutrosProdutos.textContent = '▶ Expandir';
-            } else {
-                btnToggleOutrosProdutos.textContent = '▼ Recolher';
-            }
-        };
-        
-        if (produtosSectionHeader) {
-            produtosSectionHeader.addEventListener('click', toggleOutrosProdutos);
+        // Exibição de informações do usuário e controle de acesso
+        document.getElementById('user-display').textContent = `${loggedInUser} (${setorLogado})`;
+        const loggedInUserAccessType = sessionStorage.getItem('loggedInUserAccessType');
+        const adminPanelLink = document.getElementById('admin-panel-link');
+        if (adminPanelLink && loggedInUserAccessType === 'Operador') {
+            adminPanelLink.style.display = 'none';
         }
 
-        const loggedInUser = sessionStorage.getItem('loggedInUser');
-        if (loggedInUser) {
-            userDisplay.textContent = loggedInUser;
+        // Toda a lógica do PDV que já existia (carrinho, produtos, pagamentos, etc.)
+        let carrinho = [];
+        let valorTotal = 0;
+        let valorPago = 0;
+        let produtosDoFirestore = [];
+
+        const carrinhoLista = document.getElementById('carrinho-lista');
+        const carrinhoResumoDiv = document.querySelector('.carrinho-resumo');
+        
+        async function fetchProductsFromFirestore() {
+            try {
+                const snapshot = await db.collection("produtos").where("setor", "==", setorLogado).get();
+                return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            } catch (error) {
+                console.error("Erro ao carregar produtos:", error);
+                return [];
+            }
         }
 
         const formatarPreco = (valor) => `R$ ${valor.toFixed(2).replace('.', ',')}`;
 
-        function formatarValorMonetarioAoDigitar(event) {
-            let input = event.target;
-            let val = input.value.replace(/\D/g, "");
-
-            if (!val) {
-                input.value = "";
-                return;
-            }
-
-            while (val.length < 3) {
-                val = "0" + val;
-            }
-
-            let inteiro = val.slice(0, -2);
-            let decimal = val.slice(-2);
-
-            inteiro = inteiro.replace(/^0+(?=\d)/, "");
-
-            input.value = `${inteiro},${decimal}`;
-        }
-
-        async function fetchProductsFromFirestore() {
-            if (typeof db === 'undefined' || db === null) {
-                console.error("Error: Firestore 'db' object is not defined or null. Ensure firebase-config.js is loaded correctly.");
-                return [];
-            }
-            try {
-                const snapshot = await db.collection("produtos").get();
-                return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            } catch (error) {
-                console.error("Erro ao carregar produtos do Firestore: ", error);
-                return [];
-            }
-        }
-
-        const calcularTotalEAtualizarResumo = () => {
-            valorTotal = carrinho.reduce((acc, item) => acc + (item.preco * item.quantidade), 0);
-            valorRestante = valorTotal - valorPago;
-            trocoNecessario = Math.max(0, valorPago - valorTotal);
-
-            carrinhoResumoDiv.innerHTML = '';
-
-            const resultadoContainer = document.createElement('div');
-            resultadoContainer.classList.add('resultado-container');
-
-            if (carrinho.length > 0) {
-                if (valorRestante > 0) {
-                    resultadoContainer.innerHTML = `<div class="carrinho-total" style="color: var(--yellow-warning);"><span>FALTA:</span><span class="valor">${formatarPreco(valorRestante)}</span></div>`;
-                } else {
-                    const cor = trocoNecessario > 0 ? 'var(--green-success)' : 'var(--text-light)';
-                    const label = trocoNecessario > 0 ? 'TROCO' : 'TOTAL';
-                    const valorDisplay = trocoNecessario > 0 ? formatarPreco(trocoNecessario) : formatarPreco(valorTotal);
-                    const textoBotao = vendaEmEdicaoId ? 'ATUALIZAR VENDA' : 'FINALIZAR VENDA';
-                    resultadoContainer.innerHTML = `<div class="carrinho-total" style="color: ${cor};"><span>${label}:</span><span class="valor">${valorDisplay}</span></div><button class="btn-primary btn-finalizar" id="btn-finalizar">${textoBotao}</button>`;
-                }
-            } else {
-                 resultadoContainer.innerHTML = `<div class="carrinho-total"><span>TOTAL:</span><span class="valor">${formatarPreco(0)}</span></div>`;
-            }
-            carrinhoResumoDiv.appendChild(resultadoContainer);
-            
-            if(carrinho.length > 0) {
-                if (pagamentosEfetuados.length > 0) {
-                    carrinhoResumoDiv.insertAdjacentHTML('beforeend',
-                        '<ul class="pagamentos-lista">' +
-                        pagamentosEfetuados.map((p, index) => `<li class="pagamento-item">${p.tipo.toUpperCase()}: ${formatarPreco(p.valor)} <button class="btn-remover-pagamento" data-index="${index}">✕</button></li>`).join('') +
-                        '</ul>'
-                    );
-                    
-                    carrinhoResumoDiv.querySelectorAll('.btn-remover-pagamento').forEach(btn => {
-                        btn.addEventListener('click', (e) => {
-                            e.preventDefault();
-                            const index = parseInt(e.target.getAttribute('data-index'));
-                            removerPagamento(index);
-                        });
-                    });
-                }
-
-                carrinhoResumoDiv.insertAdjacentHTML('beforeend', '<p class="carrinho-pagamento">Pagamento:</p><div class="opcoes-pagamento" id="opcoes-pagamento"></div><button class="btn-pagamento btn-cancelar" id="btn-cancelar">❌ Cancelar Pedido</button>');
-                renderizarOpcoesPagamento();
-            }
-            
-            reassociarListenersGerais();
-        };
-
-        const reassociarListenersGerais = () => {
-            const btnCancelar = document.getElementById('btn-cancelar');
-            if (btnCancelar) {
-                 btnCancelar.addEventListener('click', cancelarPedido);
-            }
-            const btnFinalizar = document.getElementById('btn-finalizar');
-            if (btnFinalizar) {
-                btnFinalizar.addEventListener('click', () => finalizarVenda('PAGO'));
-            }
-
-            const btnBrinde = document.getElementById('btn-dar-brinde');
-            if (btnBrinde) {
-                 btnBrinde.addEventListener('click', mostrarInputBrinde);
-            }
-        }
-
-        const finalizarVenda = async (tipoFinalizacao = 'PAGO') => {
+        function renderizarCarrinho() {
+            carrinhoLista.innerHTML = '';
             if (carrinho.length === 0) {
-                 console.log('Adicione itens ao carrinho para finalizar a venda.');
-                 return;
-            }
-
-            if (tipoFinalizacao === 'PAGO' && valorRestante > 0) {
-                console.log('Ainda faltam ' + formatarPreco(valorRestante) + ' para completar o pagamento.');
-                return;
-            }
-
-            try {
-                if (typeof db === 'undefined' || db === null) {
-                    console.error("Error: Firestore 'db' object is not defined or null. Ensure firebase-config.js is loaded correctly.");
-                    console.error("Erro de conexão: Não foi possível acessar o banco de dados. Verifique sua configuração.");
-                    return;
-                }
-
-                const today = new Date();
-                const day = today.getDate().toString().padStart(2, '0');
-                const month = (today.getMonth() + 1).toString().padStart(2, '0');
-                const year = today.getFullYear();
-                const dateFormattedForId = `${day}${month}${year}`;
-
-                const dateStringForCounter = `${year}-${month}-${day}`;
-
-                let vendaId = null;
-
-                await db.runTransaction(async (transaction) => {
-                    const counterRef = db.collection("daily_counters").doc(loggedInUser);
-                    const counterDoc = await transaction.get(counterRef);
-
-                    let currentCount = 0;
-                    if (counterDoc.exists && counterDoc.data()[dateStringForCounter]) {
-                        currentCount = counterDoc.data()[dateStringForCounter];
-                    }
-
-                    const newCount = currentCount + 1;
-                    transaction.set(counterRef, { [dateStringForCounter]: newCount }, { merge: true });
-
-                    vendaId = `${loggedInUser}${dateFormattedForId}-${newCount}`;
-                    const vendaRef = db.collection("vendas").doc(vendaId);
-
-                    transaction.set(vendaRef, {
-                        itens: carrinho,
-                        valorTotal: valorTotal,
-                        valorPago: valorPago,
-                        troco: trocoNecessario,
-                        pagamentos: pagamentosEfetuados,
-                        tipo: tipoFinalizacao,
-                        operador: loggedInUser || 'N/A',
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                        justificativaBrinde: justificativaBrinde || null
-                    });
-                });
-                
-                console.log("Venda salva com sucesso no Firestore! ID: ", vendaId);
-
-                if (vendaId) {
-                    imprimirRecibo(vendaId, carrinho, valorTotal, pagamentosEfetuados, trocoNecessario, formatarPreco, loggedInUser, justificativaBrinde);
-                }
-
-                carrinho = [];
-                valorPago = 0;
-                valorTotal = 0;
-                trocoNecessario = 0;
-                pagamentosEfetuados = [];
-                justificativaBrinde = '';
-                renderizarCarrinho();
-                renderizarBotaoBrinde();
-
-            } catch (error) {
-                console.error("Erro ao salvar venda: ", error);
-                console.error("ERRO CRÍTICO: A venda NÃO foi salva no banco de dados. A impressão foi cancelada. Verifique sua conexão ou as regras do Firebase. Tente novamente.");
-            }
-        };
-
-        const cancelarPedido = () => {
-            if (carrinho.length > 0) {
-                console.log('Pedido cancelado.');
-                carrinho = [];
-                valorPago = 0;
-                valorTotal = 0;
-                trocoNecessario = 0;
-                pagamentosEfetuados = [];
-                justificativaBrinde = '';
-                renderizarCarrinho();
+                carrinhoLista.innerHTML = '<p style="text-align: center; color: var(--text-muted);">Carrinho vazio.</p>';
             } else {
-                console.log('O carrinho já está vazio.');
-            }
-        };
-
-        const renderizarBotaoBrinde = () => {
-             brindeContainer.innerHTML = `
-                <button class="btn-brinde" id="btn-dar-brinde">
-                    🎁 Dar Brinde (Cortesia)
-                </button>
-            `;
-            document.getElementById('btn-dar-brinde').addEventListener('click', mostrarInputBrinde);
-        }
-
-        const mostrarInputBrinde = () => {
-            if (carrinho.length === 0) {
-                console.log('Adicione itens ao carrinho para dar um brinde.');
-                return;
-            }
-
-            brindeContainer.innerHTML = `
-                <div style="display: flex; flex-direction: column; gap: 5px; align-items: stretch; background-color: var(--blue-info); padding: 10px; border-radius: 8px;">
-                    <input type="password"
-                           id="brinde-senha-input"
-                           class="input-field"
-                           placeholder="Senha Supervisor"
-                           style="padding: 8px; font-size: 14px; border: none; border-radius: 4px;">
-                    <input type="text"
-                           id="brinde-justificativa-input"
-                           class="input-field"
-                           placeholder="Justificativa do brinde"
-                           style="padding: 8px; font-size: 14px; border: none; border-radius: 4px;">
-                    <div style="display: flex; gap: 5px; justify-content: flex-end;">
-                        <button id="btn-confirmar-brinde" class="btn-primary" style="padding: 8px 12px;">
-                            🔑 OK
-                        </button>
-                        <button id="btn-cancelar-brinde" class="btn-controle btn-cancelar-item" style="padding: 4px; width: 30px; height: 30px; font-size: 14px;">
-                            &times;
-                        </button>
-                    </div>
-                </div>
-            `;
-
-            document.getElementById('btn-confirmar-brinde').addEventListener('click', processarBrinde);
-            document.getElementById('btn-cancelar-brinde').addEventListener('click', renderizarBotaoBrinde);
-            document.getElementById('brinde-senha-input').focus();
-        };
-
-        const processarBrinde = () => {
-            const senhaInput = document.getElementById('brinde-senha-input');
-            const justificativaInput = document.getElementById('brinde-justificativa-input');
-            const senhaDigitada = senhaInput.value;
-            const justificativa = justificativaInput.value;
-            const loggedInUserAccessType = sessionStorage.getItem('loggedInUserAccessType');
-
-            if (loggedInUserAccessType === 'Admin' || loggedInUserAccessType === 'A&O') {
-                if (senhaDigitada === SENHA_SUPERVISOR) {
-                    valorPago = valorTotal;
-                    pagamentosEfetuados = [{ tipo: 'BRINDE (Cortesia)', valor: valorTotal }];
-                    justificativaBrinde = justificativa;
-                    finalizarVenda('BRINDE');
-                } else {
-                    console.error('Senha incorreta para dar brinde.');
-                    senhaInput.value = '';
-                    senhaInput.focus();
-                }
-            } else {
-                console.error('Você não tem permissão para dar brindes.');
-                senhaInput.value = '';
-                justificativaInput.value = '';
-                renderizarBotaoBrinde();
-            }
-        };
-
-        const processarPagamento = (tipo, valor) => {
-            if (valorTotal === 0) return;
-
-            pagamentosEfetuados.push({ tipo: tipo, valor: valor });
-            valorPago += valor;
-
-            renderizarOpcoesPagamento();
-            calcularTotalEAtualizarResumo();
-        };
-
-        const removerPagamento = (index) => {
-            if (index < 0 || index >= pagamentosEfetuados.length) return;
-            
-            const pagamentoRemovido = pagamentosEfetuados[index];
-            valorPago -= pagamentoRemovido.valor;
-            pagamentosEfetuados.splice(index, 1);
-            
-            calcularTotalEAtualizarResumo();
-            reassociarListenersGerais();
-        };
-
-        const renderizarBotaoPagamento = (tipo) => {
-             const classes = {
-                'pix': 'btn-pix',
-                'debito': 'btn-debito',
-                'credito': 'btn-credito',
-                'dinheiro': 'btn-dinheiro'
-            };
-            const icones = {
-                'pix': '💳 PIX (QR Code)',
-                'debito': '💳 Débito',
-                'credito': '💳 Crédito',
-                'dinheiro': '💵 Dinheiro'
-            };
-
-            return `
-                <button class="btn-pagamento ${classes[tipo]}" data-tipo="${tipo}">
-                    ${icones[tipo]}
-                </button>
-            `;
-        }
-
-        const renderizarOpcoesPagamento = (inputAtivo = null) => {
-            const opcoesContainer = document.getElementById('opcoes-pagamento');
-            if (!opcoesContainer) return;
-
-            if (valorRestante <= 0 && valorPago > 0) {
-                opcoesContainer.innerHTML = '';
-                return;
-            }
-
-            const tipos = ['pix', 'debito', 'credito', 'dinheiro'];
-            let valorSugerido = valorRestante > 0 ? valorRestante : valorTotal;
-             if (valorPago > 0) {
-                valorSugerido = Math.max(0, valorRestante);
-            } else if (valorTotal > 0) {
-                valorSugerido = valorTotal;
-            } else {
-                valorSugerido = 0;
-            }
-
-            const opcoesHTML = tipos.map(tipo => {
-                if (tipo === inputAtivo) {
-                    const displayValue = (valorSugerido > 0 ? valorSugerido.toFixed(2) : '0.00').replace('.', ',');
-                    return `
-                        <div class="input-pagamento-container" data-tipo="${tipo}">
-                            <input type="text"
-                                   id="input-${tipo}"
-                                   class="input-pagamento-valor"
-                                   placeholder="0,00"
-                                   value="${displayValue}"
-                                   min="0"
-                                   step="0.01">
-                            <button class="btn-confirmar-pagamento" data-tipo="${tipo}">
-                                OK
-                            </button>
+                carrinho.forEach(item => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.classList.add('carrinho-item');
+                    itemDiv.innerHTML = `
+                        <div class="item-info">
+                            <span>${item.nome}</span>
+                            <span>${formatarPreco(item.preco)} x ${item.quantidade}</span>
+                        </div>
+                        <div class="item-actions">
+                            <button class="btn-controle" data-id="${item.id}" data-acao="diminuir">-</button>
+                            <span class="quantidade">${item.quantidade}</span>
+                            <button class="btn-controle" data-id="${item.id}" data-acao="aumentar">+</button>
+                            <button class="btn-remover-item" data-id="${item.id}">&times;</button>
                         </div>
                     `;
-                }
-                return renderizarBotaoPagamento(tipo);
-            }).join('');
-
-            opcoesContainer.style.gridTemplateColumns = 'repeat(2, 1fr)';
-            opcoesContainer.innerHTML = opcoesHTML;
-
-            opcoesContainer.querySelectorAll('.btn-pagamento').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const tipo = e.currentTarget.getAttribute('data-tipo');
-                    if (opcoesContainer.querySelector('.input-pagamento-container')?.getAttribute('data-tipo') === tipo) {
-                        renderizarOpcoesPagamento();
-                    } else {
-                        renderizarOpcoesPagamento(tipo);
-                    }
-                });
-            });
-
-            const btnConfirmar = opcoesContainer.querySelector('.btn-confirmar-pagamento');
-            if (btnConfirmar) {
-                btnConfirmar.addEventListener('click', (e) => {
-                    const tipoPagamento = e.currentTarget.getAttribute('data-tipo');
-                    const input = document.getElementById(`input-${tipoPagamento}`);
-                    let valorDigitado = parseFloat(input.value.replace(',', '.'));
-
-                    if (isNaN(valorDigitado) || valorDigitado <= 0) {
-                        renderizarOpcoesPagamento();
-                        return;
-                    }
-                    processarPagamento(tipoPagamento, valorDigitado);
+                    carrinhoLista.appendChild(itemDiv);
                 });
             }
-
-            const inputElement = opcoesContainer.querySelector('.input-pagamento-valor');
-            if (inputElement) {
-                inputElement.focus();
-                inputElement.select();
-                 inputElement.addEventListener('input', formatarValorMonetarioAoDigitar);
-                 inputElement.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        btnConfirmar.click();
-                    }
-                     if (e.key === 'Escape') {
-                        e.preventDefault();
-                         renderizarOpcoesPagamento();
-                    }
-                });
-            }
-        };
-
-        const renderizarCarrinho = () => {
-            if (carrinho.length === 0) {
-                carrinhoLista.innerHTML = '<p style="text-align: center; color: var(--text-muted); margin-top: 50px;">Carrinho vazio.</p>';
+            atualizarResumoCarrinho();
+        }
+        
+        function adicionarAoCarrinho(produto) {
+            const itemExistente = carrinho.find(item => item.id === produto.id);
+            if (itemExistente) {
+                itemExistente.quantidade++;
             } else {
-                carrinhoLista.innerHTML = '';
+                carrinho.push({ ...produto, quantidade: 1 });
             }
+            renderizarCarrinho();
+        }
 
-            carrinho.forEach(item => {
-                const listItem = document.createElement('div');
-                listItem.classList.add('carrinho-item');
-
-                listItem.innerHTML = `
-                    <div class="item-footer">
-                        <div class="item-acoes-esquerda">
-                             <button class="btn-controle btn-cancelar-item" data-id="${item.id}" data-acao="cancelarItem">
-                                &times;
-                            </button>
-                            <div class="item-header">${item.nome}</div>
-                            <div class="item-preco-qtde">
-                                ${formatarPreco(item.preco)} x ${item.quantidade}
-                            </div>
-                        </div>
-                        <div class="item-controles-direita">
-                            <button class="btn-controle btn-controle-diminuir" data-id="${item.id}" data-acao="diminuir">
-                                -
-                            </button>
-                            <span class="quantidade-display">${item.quantidade}</span>
-                            <button class="btn-controle" data-id="${item.id}" data-acao="aumentar">
-                                +
-                            </button>
-                        </div>
-                    </div>
-                `;
-                carrinhoLista.appendChild(listItem);
-            });
-
-            carrinhoLista.querySelectorAll('.btn-controle').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const itemId = e.currentTarget.getAttribute('data-id');
-                    const acao = e.currentTarget.getAttribute('data-acao');
-                    manipularQuantidade(itemId, acao);
-                });
-            });
-
-            calcularTotalEAtualizarResumo();
-            renderizarOpcoesPagamento();
-        };
-
-        const manipularQuantidade = (itemId, acao) => {
-            const index = carrinho.findIndex(item => item.id === itemId);
-
-            if (index > -1) {
+        function manipularQuantidade(id, acao) {
+            const itemIndex = carrinho.findIndex(item => item.id === id);
+            if (itemIndex > -1) {
                 if (acao === 'aumentar') {
-                    carrinho[index].quantidade += 1;
+                    carrinho[itemIndex].quantidade++;
                 } else if (acao === 'diminuir') {
-                    carrinho[index].quantidade -= 1;
-                } else if (acao === 'cancelarItem') {
-                    carrinho.splice(index, 1);
-                    valorPago = 0;
-                    pagamentosEfetuados = [];
-                    renderizarCarrinho();
-                    return;
+                    carrinho[itemIndex].quantidade--;
+                    if (carrinho[itemIndex].quantidade <= 0) {
+                        carrinho.splice(itemIndex, 1);
+                    }
                 }
-
-                if (carrinho[index] && carrinho[index].quantidade <= 0) {
-                    carrinho.splice(index, 1);
-                    valorPago = 0;
-                    pagamentosEfetuados = [];
-                }
-
                 renderizarCarrinho();
             }
-        };
+        }
 
-        const renderizarProdutos = (filtro = '') => {
-            if (!acessoRapidoGrid || !outrosProdutosGrid) return;
+        function removerDoCarrinho(id) {
+            carrinho = carrinho.filter(item => item.id !== id);
+            renderizarCarrinho();
+        }
+        
+        function atualizarResumoCarrinho() {
+            valorTotal = carrinho.reduce((acc, item) => acc + (item.preco * item.quantidade), 0);
+            const valorRestante = valorTotal - valorPago;
 
+            let resumoHTML = `
+                <div class="carrinho-total">
+                    <span>TOTAL:</span>
+                    <span class="valor">${formatarPreco(valorTotal)}</span>
+                </div>
+            `;
+            // Adicionar lógica de pagamento e troco se necessário
+            
+            carrinhoResumoDiv.innerHTML = resumoHTML;
+        }
+
+        carrinhoLista.addEventListener('click', (event) => {
+            if (event.target.classList.contains('btn-controle')) {
+                const id = event.target.dataset.id;
+                const acao = event.target.dataset.acao;
+                manipularQuantidade(id, acao);
+            } else if (event.target.classList.contains('btn-remover-item')) {
+                const id = event.target.dataset.id;
+                removerDoCarrinho(id);
+            }
+        });
+
+        function renderizarProdutos(produtos) {
+            const acessoRapidoGrid = document.getElementById('acesso-rapido-grid');
+            const outrosProdutosGrid = document.getElementById('outros-produtos-grid');
             acessoRapidoGrid.innerHTML = '';
             outrosProdutosGrid.innerHTML = '';
 
-            const termoBusca = filtro.toLowerCase().trim();
-            const produtosFiltrados = produtosDoFirestore.filter(produto => {
-                return produto.id.toLowerCase().includes(termoBusca);
-            });
-
-
-            produtosFiltrados.forEach(produto => {
+            produtos.forEach(produto => {
                 const card = document.createElement('div');
-                card.classList.add('produto-card');
-                card.setAttribute('data-id', produto.id);
-
-                const precoFormatado = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(produto.preco);
-                const acessoRapidoTag = produto.acessoRapido ? '<div class="acesso-rapido-info">⚡</div>' : '';
-
+                card.className = 'produto-card';
                 card.innerHTML = `
-                    <div class="card-header">
-                        <div class="icone">${produto.icone || '❓'}</div>
-                        <div class="product-title-group">
-                            <div class="nome">${produto.nome}</div>
-                            <div class="product-id-display">ID: ${produto.id}</div>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        ${acessoRapidoTag}
-                        <div class="preco">R$ ${precoFormatado}</div>
-                    </div>
+                    <div class="nome">${produto.nome}</div>
+                    <div class="preco">${formatarPreco(produto.preco)}</div>
                 `;
-
-                card.addEventListener('click', () => {
-                    adicionarAoCarrinho(produto);
-                });
+                card.addEventListener('click', () => adicionarAoCarrinho(produto));
 
                 if (produto.acessoRapido) {
                     acessoRapidoGrid.appendChild(card);
@@ -622,80 +228,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     outrosProdutosGrid.appendChild(card);
                 }
             });
-
-            if (produtosFiltrados.length === 0 && termoBusca !== '') {
-                outrosProdutosGrid.innerHTML = '<p style="text-align: center; color: var(--text-muted); margin-top: 20px;">Nenhum produto encontrado com este ID.</p>';
-                acessoRapidoGrid.innerHTML = '';
-            } else if (produtosFiltrados.length === 0 && termoBusca === '') {
-                 outrosProdutosGrid.innerHTML = '<p style="text-align: center; color: var(--text-muted); margin-top: 20px;">Nenhum produto cadastrado.</p>';
-                 acessoRapidoGrid.innerHTML = '';
-            }
-        };
-
-        const adicionarAoCarrinho = (produto) => {
-            const itemExistente = carrinho.find(item => item.id === produto.id);
-
-            if (itemExistente) {
-                itemExistente.quantidade += 1;
-            } else {
-                carrinho.push({ ...produto, quantidade: 1 });
-            }
-            valorPago = 0;
-            pagamentosEfetuados = [];
-
-            renderizarCarrinho();
-        };
-
-        if (buscaProdutoInput && btnLimparBusca && btnConfirmarBusca) {
-            buscaProdutoInput.addEventListener('keyup', () => {
-                const termoBusca = buscaProdutoInput.value.trim();
-                if (termoBusca.length > 0) {
-                    btnLimparBusca.style.display = 'inline-block';
-                } else {
-                    btnLimparBusca.style.display = 'none';
-                }
-            });
-
-            btnConfirmarBusca.addEventListener('click', () => {
-                const idBuscado = buscaProdutoInput.value.trim().toLowerCase();
-                
-                if (!idBuscado) {
-                    alert('Por favor, digite um ID de produto.');
-                    return;
-                }
-                
-                const produtoEncontrado = produtosDoFirestore.find(p => p.id.toLowerCase() === idBuscado);
-                
-                if (produtoEncontrado) {
-                    adicionarAoCarrinho(produtoEncontrado);
-                    buscaProdutoInput.value = '';
-                    btnLimparBusca.style.display = 'none';
-                    alert(`${produtoEncontrado.nome} adicionado ao carrinho!`);
-                } else {
-                    alert(`Produto com ID "${idBuscado}" não encontrado.`);
-                }
-            });
-
-            btnLimparBusca.addEventListener('click', () => {
-                buscaProdutoInput.value = '';
-                btnLimparBusca.style.display = 'none';
-                buscaProdutoInput.focus();
-            });
-
-            buscaProdutoInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    btnConfirmarBusca.click();
-                }
-            });
         }
-
 
         async function inicializarPDV() {
             produtosDoFirestore = await fetchProductsFromFirestore();
-            renderizarProdutos();
+            renderizarProdutos(produtosDoFirestore);
             renderizarCarrinho();
-            renderizarBotaoBrinde();
         }
 
         inicializarPDV();

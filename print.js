@@ -1,100 +1,142 @@
 // print.js
 
 /**
- * Imprime um recibo para cada item no carrinho, no estilo "quermesse".
- * Cada item gera uma impressão separada COM TODAS as informações da venda.
- *
- * @param {string} vendaId - O ID da venda do Firestore.
- * @param {Array} carrinho - O array de itens no carrinho.
- * @param {number} valorTotal - O valor total da venda.
- * @param {Array} pagamentosEfetuados - Lista de pagamentos.
- * @param {number} trocoNecessario - O valor do troco.
- * @param {function} formatarPreco - Função para formatar valores monetários.
- * @param {string} loggedInUser - O nome do operador logado.
- * @param {string} titulo - O título do recibo (e.g., "RECIBO DE VENDA").
+ * Prepara e imprime um recibo, escolhendo o método (Android ou Navegador).
+ * A formatação para Android é feita com alinhamento manual para maior compatibilidade.
  */
-
-function imprimirRecibo(vendaId, carrinho, valorTotal, pagamentosEfetuados, trocoNecessario, formatarPreco, loggedInUser, titulo = 'RECIBO') {
+function imprimirRecibo(vendaId, carrinho, valorTotal, pagamentosEfetuados, trocoNecessario, formatarPreco, loggedInUser, tipoVenda = 'RECIBO', justificativa = '') {
     const data = new Date();
     const dataFormatada = `${data.toLocaleDateString('pt-BR')} ${data.toLocaleTimeString('pt-BR')}`;
     const operador = loggedInUser || 'N/A';
 
     if (window.AndroidPrint && typeof window.AndroidPrint.print === 'function') {
-        console.log("Modo 'Quermesse'. Enviando cupons individuais.");
+        // Largura padrão para impressoras de 80mm é ~42/48 caracteres. Usamos 42 para segurança.
+        const LARGURA_COLUNA = 42;
 
-        // 1. Monta o bloco de informações financeiras UMA VEZ para reutilização.
-        let textoFinanceiro = `--------------------------------\n`;
-        textoFinanceiro += `TOTAL: ${formatarPreco(valorTotal)}\n`;
-        if (Array.isArray(pagamentosEfetuados)) {
-            pagamentosEfetuados.forEach(p => {
-                textoFinanceiro += `${p.tipo.toUpperCase()}: ${formatarPreco(p.valor)}\n`;
-            });
+        const centralizar = (texto) => {
+            if (!texto) return '\n';
+            const espacos = ' '.repeat(Math.max(0, Math.floor((LARGURA_COLUNA - texto.length) / 2)));
+            return `${espacos}${texto}\n`;
+        };
+
+        const linha = '-'.repeat(LARGURA_COLUNA) + '\n';
+
+        if (tipoVenda === 'BRINDE') {
+            imprimirReciboBrindeAndroid(vendaId, carrinho, operador, dataFormatada, justificativa, centralizar, linha);
+        } else {
+            imprimirReciboQuermesseAndroid(vendaId, carrinho, valorTotal, pagamentosEfetuados, trocoNecessario, formatarPreco, operador, dataFormatada, centralizar, linha);
         }
-        if (trocoNecessario > 0) {
-            textoFinanceiro += `TROCO: ${formatarPreco(trocoNecessario)}\n`;
-        }
-        textoFinanceiro += `--------------------------------\n`;
-
-        // 2. Itera sobre cada item para criar e imprimir seu cupom individualmente.
-        carrinho.forEach(item => {
-            for (let i = 0; i < item.quantidade; i++) {
-                let cupomIndividual = '';
-                cupomIndividual += `        PATATI PATATA PDV\n`;
-                cupomIndividual += `--------------------------------\n`;
-                cupomIndividual += `          ${item.nome.toUpperCase()}\n`; // Item em destaque
-                cupomIndividual += `  (1x ${formatarPreco(item.preco)})\n`;
-                cupomIndividual += `--------------------------------\n`;
-                
-                // --- INFORMAÇÕES ADICIONAIS ---
-                cupomIndividual += `Venda: #${vendaId}\n`;
-                cupomIndividual += `Data: ${dataFormatada}\n`;
-                cupomIndividual += `Operador: ${operador}\n`;
-                
-                // Adiciona o bloco financeiro
-                cupomIndividual += textoFinanceiro;
-                
-                cupomIndividual += `Obrigado!\n\n\n`; // Adicione mais espaço se necessário antes do corte
-
-                // Envia este cupom específico para o Android. O corte será tratado no lado nativo.
-                console.log(`Enviando para impressão: 1x ${item.nome}`);
-                window.AndroidPrint.print(cupomIndividual);
-            }
-        });
-
     } else {
-        console.warn("Interface AndroidPrint não encontrada. Imprimindo um recibo consolidado via navegador.");
-        imprimirViaNavegador(vendaId, carrinho, valorTotal, pagamentosEfetuados, trocoNecessario, formatarPreco, operador, dataFormatada, titulo);
+        console.warn("Interface AndroidPrint não encontrada. Imprimindo via navegador.");
+        imprimirViaNavegador(vendaId, carrinho, valorTotal, pagamentosEfetuados, trocoNecessario, formatarPreco, operador, dataFormatada, tipoVenda, justificativa);
     }
 }
 
 /**
- * **NOVA FUNÇÃO**
- * Imprime as fichas apenas para os itens adicionados ou alterados em uma troca.
- * @param {Array} itensParaImprimir - A lista de itens (com a quantidade da *diferença*) a ser impressa.
- * @param {string} vendaId - O ID da venda original para referência.
+ * Gera o texto do recibo para BRINDES e envia para impressão no Android.
+ */
+function imprimirReciboBrindeAndroid(vendaId, carrinho, operador, dataFormatada, justificativa, centralizar, linha) {
+    console.log("Modo 'Brinde'. Enviando cupons com alinhamento manual.");
+
+    let textoJustificativa = '';
+    if (justificativa && justificativa.trim() !== '') {
+        textoJustificativa = `Motivo: ${justificativa}\n`;
+    }
+
+    carrinho.forEach(item => {
+        for (let i = 0; i < item.quantidade; i++) {
+            let cupom = '';
+            cupom += centralizar('PATATI PATATA PDV');
+            cupom += linha;
+            cupom += centralizar('** CORTESIA **');
+            cupom += linha;
+            cupom += centralizar(item.nome.toUpperCase());
+            cupom += linha;
+            cupom += `Venda: #${vendaId}\n`;
+            cupom += `Data: ${dataFormatada}\n`;
+            cupom += `Operador: ${operador}\n`;
+            if (textoJustificativa) {
+                cupom += textoJustificativa;
+            }
+            cupom += '\n\n'; // Espaçamento final
+
+            console.log(`Enviando para impressão: 1x ${item.nome} (Brinde)`);
+            window.AndroidPrint.print(cupom);
+        }
+    });
+}
+
+/**
+ * Gera o texto do recibo para VENDAS e envia para impressão no Android.
+ */
+function imprimirReciboQuermesseAndroid(vendaId, carrinho, valorTotal, pagamentosEfetuados, trocoNecessario, formatarPreco, operador, dataFormatada, centralizar, linha) {
+    console.log("Modo 'Quermesse'. Enviando cupons com alinhamento manual.");
+
+    let textoFinanceiro = linha;
+    textoFinanceiro += `TOTAL: ${formatarPreco(valorTotal)}\n`;
+    if (Array.isArray(pagamentosEfetuados)) {
+        pagamentosEfetuados.forEach(p => {
+            textoFinanceiro += `${p.tipo.toUpperCase()}: ${formatarPreco(p.valor)}\n`;
+        });
+    }
+    if (trocoNecessario > 0) {
+        textoFinanceiro += `TROCO: ${formatarPreco(trocoNecessario)}\n`;
+    }
+    textoFinanceiro += linha;
+
+    carrinho.forEach(item => {
+        for (let i = 0; i < item.quantidade; i++) {
+            let cupom = '';
+            cupom += centralizar('PATATI PATATA PDV');
+            cupom += linha;
+            cupom += centralizar(item.nome.toUpperCase());
+            cupom += centralizar(`(1x ${formatarPreco(item.preco)})`);
+            cupom += linha;
+            cupom += `Venda: #${vendaId}\n`;
+            cupom += `Data: ${dataFormatada}\n`;
+            cupom += `Operador: ${operador}\n`;
+            cupom += textoFinanceiro;
+            cupom += centralizar('Obrigado!');
+            cupom += '\n\n'; // Espaçamento final
+
+            console.log(`Enviando para impressão: 1x ${item.nome}`);
+            window.AndroidPrint.print(cupom);
+        }
+    });
+}
+
+/**
+ * Imprime as fichas de troca com alinhamento manual.
  */
 function imprimirFichas(itensParaImprimir, vendaId) {
     const data = new Date();
     const dataFormatada = `${data.toLocaleDateString('pt-BR')} ${data.toLocaleTimeString('pt-BR')}`;
-    const loggedInUser = sessionStorage.getItem('loggedInUser') || 'N/A'; // Pega o usuário da sessão
+    const loggedInUser = sessionStorage.getItem('loggedInUser') || 'N/A';
+    const LARGURA_COLUNA = 42;
+    const centralizar = (texto) => {
+        if (!texto) return '\n';
+        const espacos = ' '.repeat(Math.max(0, Math.floor((LARGURA_COLUNA - texto.length) / 2)));
+        return `${espacos}${texto}\n`;
+    };
+    const linha = '-'.repeat(LARGURA_COLUNA) + '\n';
 
     if (window.AndroidPrint && typeof window.AndroidPrint.print === 'function') {
         console.log("Imprimindo fichas da troca.");
 
         itensParaImprimir.forEach(item => {
             for (let i = 0; i < item.quantidade; i++) {
-                let dadosParaImpressao = '';
-                dadosParaImpressao += `        PATATI PATATA PDV\n`;
-                dadosParaImpressao += `--------------------------------\n`;
-                dadosParaImpressao += `            ${item.nome.toUpperCase()}\n`;
-                dadosParaImpressao += `--------------------------------\n`;
-                dadosParaImpressao += `Venda: #${vendaId}\n`;
-                dadosParaImpressao += `Data da Troca: ${dataFormatada}\n`;
-                dadosParaImpressao += `Operador: ${loggedInUser}\n`;
-                dadosParaImpressao += `  <cut>\n`;
+                let cupom = '';
+                cupom += centralizar('PATATI PATATA PDV');
+                cupom += linha;
+                cupom += centralizar(item.nome.toUpperCase());
+                cupom += linha;
+                cupom += `Venda Original: #${vendaId}\n`;
+                cupom += `Data da Troca: ${dataFormatada}\n`;
+                cupom += `Operador: ${loggedInUser}\n`;
+                cupom += '\n\n'; // Espaçamento final
 
                 console.log(`Imprimindo ficha de troca: 1x ${item.nome}`);
-                window.AndroidPrint.print(dadosParaImpressao);
+                window.AndroidPrint.print(cupom);
             }
         });
     } else {
@@ -107,38 +149,51 @@ function imprimirFichas(itensParaImprimir, vendaId) {
 /**
  * Função de fallback para imprimir um recibo consolidado na web.
  */
-function imprimirViaNavegador(vendaId, carrinho, valorTotal, pagamentosEfetuados, trocoNecessario, formatarPreco, operador, dataFormatada, titulo) {
-    let itensReciboHTML = carrinho.map(item => {
-        // Adiciona um indicador de devolução ou adição para trocas
-        let indicador = '';
-        if (titulo.includes('TROCA')) {
-            if (item.quantidade < 0) {
-                indicador = ' (Devolvido)';
-            } else if (item.quantidade > 0) {
-                indicador = ' (Adicionado)';
+function imprimirViaNavegador(vendaId, carrinho, valorTotal, pagamentosEfetuados, trocoNecessario, formatarPreco, operador, dataFormatada, tipoVenda, justificativa) {
+    const isBrinde = tipoVenda === 'BRINDE';
+    const titulo = isBrinde ? 'COMPROVANTE DE CORTESIA' : (tipoVenda === 'TROCA' ? 'COMPROVANTE DE TROCA' : 'RECIBO DE VENDA');
+    
+    let itensReciboHTML = '';
+    if (isBrinde) {
+        itensReciboHTML = carrinho.map(item => `
+            <tr>
+                <td>${item.quantidade}x ${item.nome}</td>
+            </tr>
+        `).join('');
+    } else {
+        itensReciboHTML = carrinho.map(item => {
+            let indicador = '';
+            if (tipoVenda === 'TROCA') {
+                if (item.quantidade < 0) indicador = ' (Devolvido)';
+                else if (item.quantidade > 0) indicador = ' (Adicionado)';
             }
-        }
-        const quantidade = Math.abs(item.quantidade);
-        const nome = item.nome + indicador;
+            const quantidade = Math.abs(item.quantidade);
+            const nome = item.nome + indicador;
 
-        return `
-        <tr>
-            <td>${quantidade}x ${nome}</td>
-            <td>${formatarPreco(item.preco * quantidade)}</td>
-        </tr>
-    `}).join('');
+            return `
+            <tr>
+                <td>${quantidade}x ${nome}</td>
+                <td>${formatarPreco(item.preco * quantidade)}</td>
+            </tr>`;
+        }).join('');
+    }
 
-    // Garante que pagamentosEfetuados é um array antes de mapear
-    let pagamentosReciboHTML = Array.isArray(pagamentosEfetuados) ? pagamentosEfetuados.map(p => `
-        <p><strong>${p.tipo.toUpperCase()}:</strong> ${formatarPreco(p.valor)}</p>
-    `).join('') : '';
+    let corpoFinanceiroHTML = '';
+    if (!isBrinde) {
+        let pagamentosReciboHTML = Array.isArray(pagamentosEfetuados) ? pagamentosEfetuados.map(p => `<p><strong>${p.tipo.toUpperCase()}:</strong> ${formatarPreco(p.valor)}</p>`).join('') : '';
+        let totalLabel = tipoVenda === 'TROCA' ? "DIFERENÇA A PAGAR" : "TOTAL";
 
-    // Determina o que mostrar como valor total
-    let totalLabel = "TOTAL";
-    let totalValue = valorTotal;
-    if (titulo.includes('TROCA')) {
-        totalLabel = "DIFERENÇA A PAGAR";
-        // O valor total já é a diferença, então usamos ele diretamente
+        corpoFinanceiroHTML = `
+            <hr>
+            <p><strong>${totalLabel}:</strong> ${formatarPreco(valorTotal)}</p>
+            ${pagamentosReciboHTML}
+            ${trocoNecessario > 0 ? `<p><strong>TROCO:</strong> ${formatarPreco(trocoNecessario)}</p>` : ''}
+        `;
+    }
+    
+    let justificativaHTML = '';
+    if (isBrinde && justificativa && justificativa.trim() !== '') {
+        justificativaHTML = `<hr><p><strong>Motivo:</strong> ${justificativa}</p>`;
     }
 
 
@@ -164,10 +219,8 @@ function imprimirViaNavegador(vendaId, carrinho, valorTotal, pagamentosEfetuados
                 <p>Venda: #${vendaId}</p>
                 <hr>
                 <table>${itensReciboHTML}</table>
-                <hr>
-                <p><strong>${totalLabel}:</strong> ${formatarPreco(totalValue)}</p>
-                ${pagamentosReciboHTML}
-                ${trocoNecessario > 0 ? `<p><strong>TROCO:</strong> ${formatarPreco(trocoNecessario)}</p>` : ''}
+                ${justificativaHTML}
+                ${corpoFinanceiroHTML}
                 <hr>
                 <p style="text-align: center;">Obrigado!</p>
             </div>
@@ -179,7 +232,6 @@ function imprimirViaNavegador(vendaId, carrinho, valorTotal, pagamentosEfetuados
     printWindow.document.write(conteudoRecibo);
     printWindow.document.close();
     printWindow.focus();
-    // Pequeno atraso para garantir que o conteúdo seja renderizado antes de imprimir
     setTimeout(() => {
         printWindow.print();
         printWindow.close();

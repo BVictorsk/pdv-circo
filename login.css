@@ -1,0 +1,103 @@
+/* styles.css */
+
+/* Importar uma fonte limpa como 'Inter' do Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+:root {
+    --bg-dark: #1f2129;
+    --card-dark: #2a2c34;
+    --purple-main: #6b46c1;
+    --purple-hover: #5a3c9e;
+    --text-light: #e4e4e7;
+    --text-muted: #a1a1aa;
+    --input-bg: #404452;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', sans-serif;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-light);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.login-container {
+    background-color: var(--card-dark);
+    border-radius: 12px;
+    padding: 40px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    text-align: center;
+}
+
+h2 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 30px;
+}
+
+.input-group {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+input, select {
+    width: 100%;
+    padding: 12px 15px;
+    background-color: var(--input-bg);
+    border: 1px solid transparent;
+    border-radius: 8px;
+    color: var(--text-light);
+    font-size: 16px;
+    transition: border-color 0.3s;
+}
+
+input:focus, select:focus {
+    border-color: var(--purple-main);
+    outline: none;
+}
+
+select {
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 15px center;
+    background-size: 1em;
+}
+
+.btn-primary {
+    width: 100%;
+    padding: 15px 20px;
+    background-color: var(--purple-main);
+    color: var(--text-light);
+    border: none;
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+.btn-primary:hover {
+    background-color: var(--purple-hover);
+}
+
+.btn-primary:active {
+    transform: scale(0.99);
+}

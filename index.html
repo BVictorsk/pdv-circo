@@ -3,45 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Acesso ao PDV Patati Patata</title>
+    <title>Login - PDV</title>
     <link rel="stylesheet" href="styles.css">
-    <!-- Firebase App (the core Firebase SDK) -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <!-- Firebase Firestore (add this line) -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-    <!-- Your Firebase configuration -->
-    <script src="firebase-config.js"></script>
 </head>
 <body class="login-page">
-    <div class="container login-card">
-        <div class="logo">
-            &#x26F9;
-        </div>
-        <h2>Acesso ao PDV Patati Patata</h2>
-        <p>Insira suas credenciais e o troco inicial.</p>
-
+    <div class="login-container">
         <form id="login-form">
+            <h2>Acessar o Sistema</h2>
             <div class="input-group">
                 <label for="usuario">Usuário</label>
-                <input type="text" id="usuario" name="usuario" class="input-field icon-user" value="" required>
+                <input type="text" id="usuario" name="usuario" required>
             </div>
-            
             <div class="input-group">
                 <label for="senha">Senha</label>
-                <input type="password" id="senha" name="senha" class="input-field icon-lock" value="" required>
+                <input type="password" id="senha" name="senha" required>
             </div>
-
             <div class="input-group">
-                <label for="troco">Troco Inicial (R$)</label>
-                <input type="text" id="troco" name="troco" class="input-field" placeholder="Ex: 100,00" value="100.00" required>
+                <label for="setor">Setor</label>
+                <select id="setor" name="setor" required>
+                    <option value="">Carregando...</option>
+                </select>
             </div>
-
-            <button type="submit" class="btn-primary">
-                Abrir Caixa e Entrar
-            </button>
+            <button type="submit" class="btn-primary">Entrar</button>
         </form>
     </div>
 
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <!-- Firebase Config -->
+    <script src="firebase-config.js"></script>
+    <!-- Main Script -->
     <script src="script.js"></script>
 </body>
 </html>
